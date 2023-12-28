@@ -1,9 +1,6 @@
+const PROP_NAME = "status";
 
-const unknown = "unknown";
-
-const finished = "fin";
-
-const watched = "watched";
+const UNKNOWN = "unknown";
 
 const ACTIVE_MAIN = {
     "todo": "todo",
@@ -14,7 +11,7 @@ const ACTIVE_MAIN = {
 };
 
 const INACTIVE_MAIN = {
-    "finished": finished,
+    "finished": "finished",
     "complete": "cmpt",
     "n/a": "na",
     "empty": null,
@@ -24,14 +21,18 @@ const ACTIVE_VIDEO = {
     "watch-later": "watch-later",
 };
 
-const INACTIVE_VIDEO = {watched};
+const INACTIVE_VIDEO = {"watched": "watched"};
 
 const ACTIVE_JOB = {
     "interview-accepted": "interviewing",
+    "offer-received": "received",
+    "offer-sent": "sent",
+    "waiting": "waiting",
 };
 
 const INACTIVE_JOB = {
     "job-denied": "rejected",
+    "job-granted": "accepted",
 };
 
 const ACTIVE_ALL = {...ACTIVE_MAIN, ...ACTIVE_VIDEO, ...ACTIVE_JOB};
@@ -77,17 +78,20 @@ function determineInactiveStatus(page) {
                 return key;
         }
     }
-    return unknown;
+    return UNKNOWN;
 }
 
 module.exports = {
+    propName: PROP_NAME,
     active: ACTIVE_MAIN,
     inactive: INACTIVE_MAIN,
+    main: {...ACTIVE_MAIN, ...INACTIVE_MAIN},
     videoActive: ACTIVE_VIDEO,
     videoInactive: INACTIVE_VIDEO,
+    video: {...ACTIVE_VIDEO, ...INACTIVE_VIDEO},
     jobActive: ACTIVE_JOB,
     jobInactive: INACTIVE_JOB,
-    allJob: {...ACTIVE_JOB, ...INACTIVE_JOB},
+    job: {...ACTIVE_JOB, ...INACTIVE_JOB},
     all: ALL,
     allActive: ACTIVE_ALL,
     allInactive: INACTIVE_ALL,
