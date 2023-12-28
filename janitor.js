@@ -1,4 +1,4 @@
-const illegalCharacterRegex = /[:\?!\|#‘’\'\"\.,+%&\(\)\\/]/g;
+const illegalCharacterRegex = /[:\?!\|#‘’\'\"\.,+%&=\(\)\\/]/g;
 
 /**
  * Transforms text into a consitent filename.
@@ -18,7 +18,9 @@ function textToFilename(text) {
  * @return {string} - The sanitized text, lowercased.
  */
 function sanitizeText(text) {
-    return text.replace(illegalCharacterRegex, "").toLowerCase();
+    return text.replace(illegalCharacterRegex, "")
+        .toLowerCase()
+        .replace(/[  ]+/g, " ");
 }
 
 module.exports = {
