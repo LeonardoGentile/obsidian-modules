@@ -1,3 +1,5 @@
+const {template} = self.require("_modules/template.js");
+const metadata = self.require("_modules/metadata.js");
 
 const JOB_POST_INFO = {
     icon: "📌",
@@ -5,6 +7,19 @@ const JOB_POST_INFO = {
     headerPlural: "Posts",
     view: "jobPostTV",
     statusType: "job",
+    frontMatter: {
+        "active": metadata.getFrontmatterPreset("active"),
+        "job type": metadata.getFrontmatterPreset("job type"),
+        "work from": metadata.getFrontmatterPreset("work from"),
+        "applied": metadata.getFrontmatterPreset("applied"),
+        "last contact": metadata.getFrontmatterPreset("last contact"),
+        "application sent": metadata.getFrontmatterPreset("application sent"),
+    },
+    inlineData: {
+        "company": metadata.getInlinePreset("company"),
+        "recruiter link": metadata.getInlinePreset("recruiter link"),
+        "direct link": metadata.getInlinePreset("direct link"),
+    },
 };
 
 const JOB_DENIED = {
@@ -29,6 +44,20 @@ const INTERVIEW_ACCEPTED = {
     headerPlural: "Interviews",
     view: "jobPostTV",
     statusType: "job",
+};
+
+const COMPANY = {
+    icon: "🏢",
+    header: "Company",
+    headerPlural: "Companies",
+    view: "companyTV",
+    statusType: "main",
+    frontMatter: {
+        locations: null,
+        hiring: metadata.getFrontmatterPreset("hiring"),
+        link: null,
+    },
+    postsView: null,
 };
 
 module.exports = {
@@ -116,8 +145,44 @@ module.exports = {
         view: "progressButtonTV",
         statusType: "main",
     },
-    "games-job": JOB_POST_INFO,
-    "vfx-job": JOB_POST_INFO,
+    "game-company": {...COMPANY, ...{
+        icon: "🕹",
+        header: "Game Company",
+        headerPlural: "Game Companies",
+        postViewTemplate: template`posts::\`$= dv.view("job-posts", {file: "${"title"}, tags: ["games-job"]})\``,
+    }},
+    "games-job": {...JOB_POST_INFO, ...{
+        niceName: "Games",
+        inlineData: {
+            "company": {
+                type: "tag",
+                values: [
+                    "#game-company",
+                ],
+            },
+            "recruiter link": metadata.getInlinePreset("recruiter link"),
+            "direct link": metadata.getInlinePreset("direct link"),
+        },
+    }},
+    "vfx-company": {...COMPANY, ...{
+        icon: "🎥",
+        header: "VFX Studio",
+        headerPlural: "VFX Studios",
+        postViewTemplate: template`posts::\`$= dv.view("job-posts", {file: "${"title"}, tags: ["vfx-job"]})\``,
+    }},
+    "vfx-job": {...JOB_POST_INFO, ...{
+        niceName: "VFX",
+        inlineData: {
+            "company": {
+                type: "tag",
+                values: [
+                    "#vfx-company",
+                ],
+            },
+            "recruiter link": metadata.getInlinePreset("recruiter link"),
+            "direct link": metadata.getInlinePreset("direct link"),
+        },
+    }},
     "job-granted": JOB_GRANTED,
     "job-denied": JOB_DENIED,
     "interview-accepted": INTERVIEW_ACCEPTED,
