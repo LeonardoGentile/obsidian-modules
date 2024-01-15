@@ -1,33 +1,3 @@
-const presets = self.require("_modules/presets.js");
-
-
-/**
- * Gets the preset value for the given frontmatter metadata field.
- *
- * @param {string} name - The metadata field name to get the preset for.
- * @return {any} The preset value for the given field.
- */
-function getFrontmatterPreset(name) {
-    if (!Object.keys(presets.frontmatter).includes(name)) {
-        new Notice(`Undefined preset: ${name}`, 5000);
-        console.error(`Undefined preset: ${name}`);
-    }
-    return presets.frontmatter[name];
-}
-
-/**
- * Gets the preset value for the given inline metadata field.
- *
- * @param {string} name - The metadata field name to get the preset for.
- * @return {any} The preset value for the given field.
- */
-function getInlinePreset(name) {
-    if (!Object.keys(presets.inline).includes(name)) {
-        new Notice(`Undefined preset: ${name}`, 5000);
-        console.error(`Undefined preset: ${name}`);
-    }
-    return presets.inline[name];
-}
 
 /**
  * Gets all unique metadata values for the given key across all markdown files in the vault.
@@ -51,7 +21,63 @@ function getAllMetadataValues(key) {
 }
 
 module.exports = {
-    getFrontmatterPreset,
-    getInlinePreset,
+    "frontmatter": {
+        "work from": {
+            type: "string",
+            values: [
+                "remote", "on-site", "hybrid",
+            ],
+        },
+        "job type": {
+            type: "string",
+            values: [
+                "full-time", "part-time", "contract", "freelance",
+            ],
+        },
+        "hiring": {
+            type: "boolean",
+            values: [],
+        },
+        "active": {
+            type: "boolean",
+            values: [],
+        },
+        "applied": {
+            type: "datetime",
+            values: [],
+        },
+        "last contact": {
+            type: "date",
+            values: [],
+        },
+        "application sent": {
+            type: "boolean",
+            values: [],
+        },
+        "locations": {
+            type: "multi",
+            values: [],
+        },
+        "link": {
+            type: "url-bare",
+            values: [],
+        },
+    },
+    "inline": {
+        "company": {
+            type: "tag",
+            values: [
+                "#company",
+            ],
+        },
+        "recruiter link": {
+            type: "url",
+            values: [],
+        },
+        "direct link": {
+            type: "url",
+            values: [],
+        },
+    },
     getAllMetadataValues,
 };

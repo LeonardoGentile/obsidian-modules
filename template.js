@@ -1,5 +1,5 @@
 /**
- * Create a function that parses template literals
+ * A function that parses template literals
  * Yoinked from:
  *   https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#tagged_templates
  * @param {Array<string>} strings array of strings which may contain ${…} substitutions

@@ -32,6 +32,14 @@ module.exports = {
             type: "boolean",
             values: [],
         },
+        "locations": {
+            type: "multi",
+            values: [],
+        },
+        "link": {
+            type: "url",
+            values: [],
+        },
     },
     "inline": {
         "company": {
