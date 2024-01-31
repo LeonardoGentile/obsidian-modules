@@ -4,15 +4,14 @@ const UNKNOWN = "unknown";
 
 const ACTIVE_MAIN = {
     "todo": "todo",
-    "waiting": "wtg",
-    "in-progress": "ip",
-    "hold": "hld",
-    "blocked": "blkd",
+    "waiting": "waiting",
+    "in-progress": "in-progress",
+    "hold": "hold",
+    "blocked": "blocked",
 };
 
 const INACTIVE_MAIN = {
     "finished": "finished",
-    "complete": "cmpt",
     "n/a": "na",
     "empty": null,
 };
@@ -24,7 +23,8 @@ const ACTIVE_VIDEO = {
 const INACTIVE_VIDEO = {"watched": "watched"};
 
 const ACTIVE_JOB = {
-    "interview-accepted": "interviewing",
+    "interviewing": "interviewing",
+    "application-sent": "application-sent",
     "offer-received": "received",
     "offer-sent": "sent",
     "waiting": "waiting",

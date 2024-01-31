@@ -1,3 +1,14 @@
+const jobPostView = template`dv.view("job-posts", {file: "${"title"}", tags: ${"tags"}})`;
+const targetView = template`dv.view("target", {file: "${"title"}"})`;
+const progressView = template`dv.view("progress", {file: "${"title"}"})`;
+const projectListView = template`dv.view("section", {file: "${"title"}", searchTerm: "project", headerName: "Project", headerNamePlural: "Projects", icon: "🏗", list: true})`;
+const projectTableView = template`dv.view("section", {file: "${"title"}", searchTerm: "project", headerName: "Project", headerNamePlural: "Projects", icon: "🏗"})`;
+const overview = template`dv.view("overview", {file: "${"title"}", interval: "${"interval"}", tags: ${"tags"}})`;
+const progressBarView = template`dv.view("${"progressView"}", {file: "${"title"}"})`;
+const navigationView = template`dv.view("navigation", {file: "${"title"}"})`;
+const ytdlpCmd = template`\`\`\`sh\nyt-dlp ${"url"} -o videos/"%(title)s.mp4"\n\`\`\``;
+const timestampUrlBlock = template`\`\`\`timestamp-url\n${"url"}\n\`\`\``;
+
 /**
  * A function that parses template literals
  * Yoinked from:
@@ -35,4 +46,14 @@ function template(strings, ...keys) {
 
 module.exports = {
     template,
+    jobPostView,
+    targetView,
+    progressView,
+    projectListView,
+    projectTableView,
+    overview,
+    progressBarView,
+    navigationView,
+    ytdlpCmd,
+    timestampUrlBlock,
 };
