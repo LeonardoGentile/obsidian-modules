@@ -264,6 +264,7 @@ class PeriodicReviewOptions extends PeriodicOptions {
         this.ignore_fields.add("series");
         this.default_values = [
             {name: "series", value: true},
+            {name: "includeFile", value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`},
         ];
     }
 }
