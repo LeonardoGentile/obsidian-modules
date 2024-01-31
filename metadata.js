@@ -442,8 +442,7 @@ async function handleYamlField(tp, field, promptOptions) {
 */
 async function handleBooleanField(tp, field, promptOptions) {
     const defaultValue = promptOptions.getValueForField(field.name);
-    const reply = await promptYesOrNo(tp, `${field.name}?`, defaultValue || false);
-    return reply.toLowerCase() === "y" ? true : false;
+    return await promptYesOrNo(tp, `${field.name}?`, defaultValue || false);
 }
 
 /**

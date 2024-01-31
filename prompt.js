@@ -28,7 +28,7 @@ async function promptYesOrNo(tp, promptText, yes) {
     const yesNoText = yes ? ("Y/n") : ("y/N");
     const yesNoValue = yes ? "y" : "n";
     const reply = await tp.system.prompt(`${promptText} ${yesNoText}`, yesNoValue);
-    return reply && reply.toLowerCase() === "y" ? true : false;
+    return reply ? reply.toLowerCase() === "y" : false;
 }
 
 module.exports = {
