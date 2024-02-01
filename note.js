@@ -41,9 +41,18 @@ async function newNoteData(tp) {
         promptOptions.url = url;
         promptOptions.querySelector = await yt.fetchUrl(url);
         const titleContent = yt.getTitle(promptOptions.querySelector);
-        promptOptions.title = textToFilename(titleContent);
+        // promptOptions.title_prefix = moment().format(promptOptions.date_fmt) + "-";
+        promptOptions.title_suffix = textToFilename(titleContent);
     }
-    const title = await promptMoveAndRename(tp, folders, promptOptions.title || type);
+
+    const title = await promptMoveAndRename(
+        tp,
+        folders,
+        promptOptions.title_prefix ?
+            promptOptions.title_sep + promptOptions.title_suffix :
+            promptOptions.title_suffix,
+        promptOptions.title_prefix,
+    );
 
     // Options for view templates, e.g. overview and job-posts
     const viewTemplateOptions = options.viewOptionFactory(type, title);
@@ -72,7 +81,7 @@ async function newNoteData(tp) {
     const aliasesFields = filterFieldsByNameAndType(fileClass.fields, ["aliases"], "yaml");
     for (const field of [...aliasFields, ...aliasesFields]) {
         if (!alias)
-            alias = await tp.system.prompt(`alias?`, titleToAlias(tp, title, null, type));
+            alias = await tp.system.prompt(`alias?`, titleToAlias(tp, title, promptOptions.date_fmt, type));
         if (field.name === "aliases") {
             const aliases = alias ? alias.length ? `\n  - ${alias}` : "" : null;
             handledValueMap.set(field.name, aliases);
@@ -251,14 +260,15 @@ function asInlineJS(field, prefix) {
  * @param {Object} tp - Templater instance
  * @param {Array} folders - Folder options to prompt the user with
  * @param {string} suffix - Suggested title suffix for note
+ * @param {string} prefix - Suggested title prefix for note
  */
-async function promptMoveAndRename(tp, folders, suffix) {
+async function promptMoveAndRename(tp, folders, suffix, prefix) {
     const origTitle = tp.file.title;
     let folder = tp.file.folder(true);
     const title = await promptAndRename(
         tp,
         suffix,
-        tp.date.now("YYYY-MM-DD") + "-",
+        prefix,
     );
 
     if (origTitle.startsWith("Untitled")) {
@@ -291,7 +301,7 @@ async function promptMoveAndRename(tp, folders, suffix) {
 async function promptAndRename(tp, title, prefix) {
     const value = await tp.system.prompt(
         "title?",
-        prefix ? prefix + title.toLowerCase() : title.toLowerCase(),
+        prefix ? prefix + title : title,
         false,
         false,
     );

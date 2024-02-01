@@ -61,7 +61,6 @@ StringSet.prototype.replace = function(oldItem, newItem) {
 
 // Replace all current set elements with the provided ones
 StringSet.prototype.replaceWith = function(items) {
-    console.log(items);
     this.checkType(items);
     this.set.clear();
     this.addMultiple(items);

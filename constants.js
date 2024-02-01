@@ -166,4 +166,6 @@ module.exports = {
     METADATA_MENU_ROOT,
     VIEWS_ROOT,
     INCLUDE_TEMPLATE_DIR,
+    DATE_FMT: "YYYY-MM-DD",
+    TITLE_SEP: "-",
 };

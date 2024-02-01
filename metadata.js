@@ -68,7 +68,7 @@ function getAllFileClassMetadata() {
  * and returns the plugin instance.
  *
  * @return {object} Metadata menu plugin
- * @throws {Error} if the plugin is not foun
+ * @throws {Error} if the plugin is not found
  */
 function getMetadataMenu() {
     const plugin = app.plugins.getPlugin("metadata-menu");
@@ -80,15 +80,21 @@ function getMetadataMenu() {
 }
 
 /**
- * Description
- * @param {any} mm
- * @return {any}
+ * Gets file classes from the Metadata Menu plugin instance.
+ *
+ * Retrieves the file class folder path from the plugin's settings.
+ * Gets all markdown files from the vault, and filters for ones whose
+ * path starts with the file class folder path.
+ *
+ * @param {Object} mm - Metadata Menu plugin instance
+ * @returns {Array[]} Array of file classes
  */
 function getFileClasses(mm) {
     const globalSettings = mm.settings;
     const fileClassFolder = globalSettings.classFilesPath;
-    return app.vault.getMarkdownFiles()
-        .filter(file => file.path.startsWith(fileClassFolder));
+    return app.vault
+        .getMarkdownFiles()
+        .filter((file) => file.path.startsWith(fileClassFolder));
 }
 
 /**
@@ -108,6 +114,39 @@ function getFileClassMetadata(fileClasses) {
             fileClassData[fileClass.name.replace(".md", "")] = frontmatter;
     }
     return fileClassData;
+}
+
+/**
+ * Gets child file classes that extend the given super class name.
+ *
+ * Accepts file class data returned from `getFileClassData`
+ * @param {Object} fileClassData - Object mapping file class names to metadata
+ * @param {string} superClassName - Name of parent class to get child classes for
+ * @returns {Object} Child file classes extending the given super class
+ */
+function getChildClasses(fileClassData, superClassName) {
+    return Object.fromEntries(
+        Object.entries(fileClassData).filter(
+            (entry) => entry[1].extends === superClassName
+        )
+    );
+}
+
+/**
+ * Gets file class object with the given class name.
+ *
+ * Accepts file class data returned from `getFileClassData`
+ * @param {Object} fileClassData - Object mapping file class names to metadata
+ * @param {string} superClassName - Name of class to get object for
+ * @returns {Object} File class with the given name
+ */
+function getClass(fileClassData, className) {
+    try {
+        return Object.entries(fileClassData).find(entry => entry[0] === className).pop()
+    } catch (error) {
+        console.error(error.stack);
+        console.error(`A class with the name '${className}' does not exist`);
+    }
 }
 
 /**
@@ -678,4 +717,6 @@ module.exports = {
     getAllFileClassMetadata,
     getFileClassData,
     promptForFileClass,
+    getChildClasses,
+    getClass,
 };

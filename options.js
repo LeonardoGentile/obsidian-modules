@@ -1,5 +1,6 @@
 const StringSet = self.require("_modules/stringSet.js");
 const constants = self.require("_modules/constants.js");
+const periodic = self.require("_modules/periodic.js");
 const {INCLUDE_TEMPLATE_DIR} = self.require("_modules/constants.js");
 
 /**
@@ -22,6 +23,14 @@ class BaseOptions {
     */
     constructor(type) {
         this.type = type;
+        this.date_fmt = constants.DATE_FMT;
+        this.title_sep = constants.TITLE_SEP;
+        this.title_prefix = moment().format(this.date_fmt);
+        this.title_suffix = this.type;
+        this.title = this.title_prefix + (
+            this.title_prefix ?
+            this.title_sep + this.title_suffix :
+            this.title_suffix);
         this.prompt_for_task = false;
         this.task_assume_yes = false; // If true, answer "yes" to prompts if asked
         this.prompt_for_attachment = false;
@@ -192,7 +201,6 @@ class VideoOptions extends ResourceOptions {
     /**
      * Sets the default prompt options
      * @param {string} type - Type of note the options instance is associated with
-     * @param {string} url - URL of the video
     */
     constructor(type) {
         super(type);
@@ -201,7 +209,6 @@ class VideoOptions extends ResourceOptions {
         this.files_paths = []; // bound to path in metadata-menu
         this.default_values = [];
         this.selector = null;
-        this.title = null;
         this.url = null;
     }
 }
@@ -209,22 +216,30 @@ class VideoOptions extends ResourceOptions {
 /**
  * Adds properties for managing video notes.
 */
-class YouTubeVideoOptions extends VideoOptions {
+class YouTubeVideoOptions extends VideoOptions {}
+
+/** Adds properties for managing periodic notes. */
+class JournalOptions extends ResourceOptions {
     /**
-     * Sets the default prompt options
+     * The constructor initializes the prompt options for periodic notes.
      * @param {string} type - Type of note the options instance is associated with
     */
     constructor(type) {
         super(type);
-        this.prompt_for_task = false;
-        this.task_assume_yes = false;
-        this.selector = null;
-        this.title = null;
+        console.log("Format ", periodic.getFormatSettings(type));
+        this.date_fmt = periodic.getFormatSettings(type) || this.date_fmt;
+        this.title_prefix = moment().format(this.date_fmt);
+        this.title_suffix = type;
+        this.files_paths = []; // bound to path in metadata-menu
+        this.ignore_fields.replace("status", "tags");
+        this.default_values = [
+            {name: "includeFile", value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`},
+        ];
     }
 }
 
 /** Adds properties for managing periodic notes. */
-class PeriodicOptions extends ResourceOptions {
+class PeriodicOptions extends JournalOptions {
     /**
      * The constructor initializes the prompt options for periodic notes.
      * @param {string} type - Type of note the options instance is associated with
@@ -232,21 +247,17 @@ class PeriodicOptions extends ResourceOptions {
     */
     constructor(type, period) {
         super(type);
-        this.period = period ?? 0;
+        this.title = moment().format(this.date_fmt)
+        this.title_prefix = "";
+        this.title_suffix = moment().format(this.date_fmt);
+        this.period = period || 0;
         this.prompt_for_task = true;
         this.task_assume_yes = true;
-        this.files_paths = []; // bound to path in metadata-menu
-        this.ignore_fields.replace("status", "tags");
-        this.default_values = [
-            {name: "includeFile", value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`},
-        ];
-        if (this.type === "daily") {
-            this.ignore_fields.add("series");
-            this.default_values.push(
-                {name: "series", value: true},
-                {name: "day_planner", value: `[[${INCLUDE_TEMPLATE_DIR}/day-planner]]`},
-            );
-        }
+        this.ignore_fields.add("series");
+        this.default_values.push(
+            {name: "series", value: true},
+            {name: "day_planner", value: `[[${INCLUDE_TEMPLATE_DIR}/day-planner]]`},
+        );
     }
 }
 
@@ -461,7 +472,7 @@ class VfxJobViewOptions extends JobPostViewOptions {
 function promptOptionFactory(type) {
     switch (type) {
         case "journal":
-            return new PeriodicOptions(type);
+            return new JournalOptions(type);
         case "daily":
             return new PeriodicOptions(type);
         case "weekly":
