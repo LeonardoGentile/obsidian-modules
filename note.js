@@ -91,6 +91,10 @@ async function newNoteData(tp) {
         handledFields.push(field);
     }
 
+    // Alias is used as the first H1 and title in metadata
+    if (alias)
+        handledValueMap.set("title", alias);
+
     // Prompt for tags
     let tags = [];
     const multiFields = filterFieldsByNameAndType(fileClass.fields, ["tags"], "multi");

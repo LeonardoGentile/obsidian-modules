@@ -347,7 +347,7 @@ async function getValuesForFields(tp, fields, templateParams, promptOptions) {
         };
 
         if (promptOptions.ignore_fields.has(field.name)) {
-            // create or modified date fields
+            // This sets default values for `created` and `modified` fields
             let defaultDateFmt;
             if (["date", "datetime"].includes(field.type.toLowerCase()))
                 defaultDateFmt = field.options.dateFormat || "YYYY-MM-DD";
