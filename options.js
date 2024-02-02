@@ -188,7 +188,7 @@ class CompanyOptions extends ResourceOptions {
         super(type);
         this.prompt_for_task = false;
         this.task_assume_yes = false;
-        this.ignore_fields.addMultiple(["locations", "link"]);
+        this.ignore_fields.addMultiple(["location", "link"]);
         this.ignore_fields.delete("status");
         this.default_values = [];
     }

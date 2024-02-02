@@ -23,6 +23,8 @@ const FRONTMATTER_FIELD_NAMES = [
     "n",
     "system_commands",
     "template",
+    // company
+    "location",
 ];
 
 // Inline Dataview fields, e.g. prop:: value
@@ -33,7 +35,6 @@ const INLINE_DV_FIELD_NAMES = [
     // company
     "img",
     "company",
-    "locations",
     "link",
     // job-post
     "active",
