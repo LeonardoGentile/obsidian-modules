@@ -99,6 +99,24 @@ class DocumentOptions extends BaseOptions {
 }
 
 /**
+ * Adds properties for managing meeting notes.
+*/
+class MeetingOptions extends BaseOptions {
+    /**
+     * Sets the default prompt options
+     * @param {string} type - Type of note the options instance is associated with
+    */
+    constructor(type) {
+        super(type);
+        this.prompt_for_task = true;
+        this.task_assume_yes = false;
+        this.default_values = [
+            {name: "includeFile", value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`},
+        ];
+    }
+}
+
+/**
  * Sets default options for goal notes.
  * It enables prompting for tasks and attachments when creating a new goal note. It also
  * sets the progress bar view to show total progress for goals.
@@ -115,7 +133,7 @@ class GoalOptions extends ResourceOptions {
         this.prompt_for_attachment = true;
         this.progress_bar_view = progressView.total;
         this.files_paths = []; // bound to path in metadata-menu
-        this.ignore_fields.add("tags");
+        this.ignore_fields.replace("status", "tags");
     }
 }
 
@@ -137,24 +155,6 @@ class ProjectOptions extends ResourceOptions {
         this.progress_bar_view = progressView.total;
         this.files_paths = []; // bound to path in metadata-menu
         this.ignore_fields.replace("status", "tags");
-    }
-}
-
-/**
- * Adds properties for managing meeting notes.
-*/
-class MeetingOptions extends BaseOptions {
-    /**
-     * Sets the default prompt options
-     * @param {string} type - Type of note the options instance is associated with
-    */
-    constructor(type) {
-        super(type);
-        this.prompt_for_task = true;
-        this.task_assume_yes = false;
-        this.default_values = [
-            {name: "includeFile", value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`},
-        ];
     }
 }
 
@@ -207,6 +207,7 @@ class VideoOptions extends ResourceOptions {
         this.prompt_for_task = false;
         this.task_assume_yes = false;
         this.files_paths = []; // bound to path in metadata-menu
+        this.ignore_fields.delete("status");
         this.default_values = [];
         this.selector = null;
         this.url = null;
