@@ -25,6 +25,29 @@ async function newNoteData(tp) {
     // Options in addition to those provided by MM file classes
     const promptOptions = options.promptOptionFactory(type);
 
+    // Should prompt for title prefix?
+    const prefix = promptOptions.prompt_for_prefix ?
+        await tp.system.prompt(`Prefix?`, moment().format(promptOptions.date_fmt)) :
+        false;
+
+    // Should prompt for title prefix?
+    const suffix = promptOptions.prompt_for_suffix ?
+        await tp.system.prompt(`Suffix?`, moment().format(promptOptions.date_fmt)) :
+        false;
+
+    if (prefix) {
+        const prefixFields = filterFieldsByNameAndType(fileClass.fields, ["prefix"], "input");
+        promptOptions.title_prefix = prefix;
+        handledValueMap.set("prefix", prefix);
+        handledFields.push(...prefixFields);
+    }
+    if (suffix) {
+        const suffixFields = filterFieldsByNameAndType(fileClass.fields, ["suffix"], "input");
+        promptOptions.title_suffix = suffix;
+        handledValueMap.set("suffix", suffix);
+        handledFields.push(...suffixFields);
+    }
+
     let url;
     const urlFields = filterFieldsByNameAndType(fileClass.fields, ["url"], "input");
     for (const field of urlFields) {
@@ -45,14 +68,25 @@ async function newNoteData(tp) {
         promptOptions.title_suffix = textToFilename(titleContent);
     }
 
-    const title = await promptMoveAndRename(
-        tp,
-        folders,
-        promptOptions.title_prefix ?
-            promptOptions.title_sep + promptOptions.title_suffix :
-            promptOptions.title_suffix,
-        promptOptions.title_prefix,
-    );
+    let title;
+    if (!promptOptions.prompt_for_title) {
+        title = promptOptions.title;
+        await tp.file.rename(title);
+        const folder = tp.file.folder(true);
+        const folderOptions = folders ?? getAllFolderPathsInVault(tp);
+        const folderPath = await getOrCreateFolder(tp, folderOptions);
+        if (folderPath !== folder)
+            await tp.file.move(folderPath + "/" + title);
+    } else {
+        title = await promptMoveAndRename(
+            tp,
+            folders,
+            promptOptions.title_prefix ?
+                promptOptions.title_sep + promptOptions.title_suffix :
+                promptOptions.title_suffix,
+            promptOptions.title_prefix,
+        );
+    }
 
     // Options for view templates, e.g. overview and job-posts
     const viewTemplateOptions = options.viewOptionFactory(type, title);
@@ -77,6 +111,8 @@ async function newNoteData(tp) {
 
     // Prompt for aliases
     let alias;
+    if (!promptOptions.prompt_for_alias)
+        alias = titleToAlias(tp, title, promptOptions.date_fmt, type);
     const aliasFields = filterFieldsByNameAndType(fileClass.fields, ["alias"], "input");
     const aliasesFields = filterFieldsByNameAndType(fileClass.fields, ["aliases"], "yaml");
     for (const field of [...aliasFields, ...aliasesFields]) {

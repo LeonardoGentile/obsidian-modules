@@ -20,17 +20,19 @@ class BaseOptions {
     /**
      * Sets the default prompt options
      * @param {string} type - Type of note the options instance is associated with
-    */
-    constructor(type) {
+     * @param {string} prefix - (Optional) Preformatted title prefix, the default is today's date.
+     * @param {string} suffix - (Optional) Preformatted title suffix, the default is the note type as string.
+     */
+    constructor(type, prefix, suffix) {
         this.type = type;
         this.date_fmt = constants.DATE_FMT;
         this.title_sep = constants.TITLE_SEP;
-        this.title_prefix = moment().format(this.date_fmt);
-        this.title_suffix = this.type;
-        this.title = this.title_prefix + (
-            this.title_prefix ?
-            this.title_sep + this.title_suffix :
-            this.title_suffix);
+        this.title_prefix = prefix != undefined ? prefix : moment().format(this.date_fmt);
+        this.title_suffix = suffix != undefined ? suffix : this.type;
+        this.prompt_for_title = true; // If true, prompt for title before file creation
+        this.prompt_for_suffix = false; // If true, prompt for title suffix before file creation
+        this.prompt_for_prefix = false; // If true, prompt for title prefix before file creation
+        this.prompt_for_alias = true;
         this.prompt_for_task = false;
         this.task_assume_yes = false; // If true, answer "yes" to prompts if asked
         this.prompt_for_attachment = false;
@@ -54,14 +56,29 @@ class BaseOptions {
     }
 
     /**
+     * Generates the title string by concatenating the title prefix, title separator (if needed),
+     * and title suffix.
+     */
+    get title() {
+        return (
+            this.title_prefix +
+            (this.title_prefix ? this.title_sep + this.title_suffix : this.title_suffix)
+        );
+    }
+
+    /**
      * Returns the value for the given field by looking it up in the default_values array.
      *
      * @param {string} field - The name of the field to get the value for.
      * @param {any} defaultValue - (Optional) A way of providing a default at the time of calling
      * @return {*} The value for the given field if found, null otherwise.
-    */
+     */
     getValueForField(field, defaultValue) {
-        return this.default_values.find(obj => obj.name === field)?.value || defaultValue || null;
+        return (
+            this.default_values.find((obj) => obj.name === field)?.value ||
+            defaultValue ||
+            null
+        );
     }
 }
 
@@ -72,9 +89,12 @@ class ResourceOptions extends BaseOptions {
     /**
      * Sets the default prompt options
      * @param {string} type - Type of note the options instance is associated with
+     * @param {string} prefix - (Optional) Preformatted title prefix
+     * @param {string} suffix - (Optional) Preformatted title suffix
     */
-    constructor(type) {
-        super(type);
+    constructor(type, prefix, suffix) {
+        super(type, prefix, suffix);
+        this.prompt_for_prefix = true;
         this.files_paths = ["library"];
         this.ignore_fields.add("status");
         this.default_values = [
@@ -109,6 +129,7 @@ class MeetingOptions extends BaseOptions {
     constructor(type) {
         super(type);
         this.prompt_for_task = true;
+        this.prompt_for_prefix = true;
         this.task_assume_yes = false;
         this.default_values = [
             {name: "includeFile", value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`},
@@ -205,6 +226,8 @@ class VideoOptions extends ResourceOptions {
     constructor(type) {
         super(type);
         this.prompt_for_task = false;
+        this.prompt_for_prefix = false;
+        this.prompt_for_suffix = false;
         this.task_assume_yes = false;
         this.files_paths = []; // bound to path in metadata-menu
         this.ignore_fields.delete("status");
@@ -224,13 +247,15 @@ class JournalOptions extends ResourceOptions {
     /**
      * The constructor initializes the prompt options for periodic notes.
      * @param {string} type - Type of note the options instance is associated with
+     * @param {string} prefix - (Optional) Preformatted title prefix, the default is an empty string.
+     * @param {string} suffix - (Optional) Preformatted title suffix, the default is today's date.
     */
-    constructor(type) {
-        super(type);
-        console.log("Format ", periodic.getFormatSettings(type));
+    constructor(type, prefix, suffix) {
+        super(type, prefix, suffix);
+        this.prompt_for_title = true;
+        this.prompt_for_suffix = false;
         this.date_fmt = periodic.getFormatSettings(type) || this.date_fmt;
-        this.title_prefix = moment().format(this.date_fmt);
-        this.title_suffix = type;
+        this.period = 0;
         this.files_paths = []; // bound to path in metadata-menu
         this.ignore_fields.replace("status", "tags");
         this.default_values = [
@@ -244,15 +269,20 @@ class PeriodicOptions extends JournalOptions {
     /**
      * The constructor initializes the prompt options for periodic notes.
      * @param {string} type - Type of note the options instance is associated with
-     * @param {number} period - The number of days between periodic reviews.
+     * @param {number} period - (Optional) The number of days between periodic reviews, the default is 0.
+     * @param {string} prefix - (Optional) Preformatted title prefix, the default is an empty string.
+     * @param {string} suffix - (Optional) Preformatted title suffix, the default is today's date.
     */
-    constructor(type, period) {
-        super(type);
-        this.title = moment().format(this.date_fmt)
-        this.title_prefix = "";
-        this.title_suffix = moment().format(this.date_fmt);
-        this.period = period || 0;
+    constructor(type, period, prefix, suffix) {
+        prefix = prefix || "";
+        suffix = suffix || moment().format(constants.DATE_FMT);
+        super(type, prefix, suffix);
+        this.prompt_for_title = false;
+        this.prompt_for_prefix = false;
+        this.prompt_for_suffix = true;
         this.prompt_for_task = true;
+        this.prompt_for_alias = false;
+        this.period = period || 0;
         this.task_assume_yes = true;
         this.ignore_fields.add("series");
         this.default_values.push(
@@ -564,18 +594,30 @@ function viewOptionFactory(type, title) {
 }
 
 module.exports = {
+    ProjectViewOptions,
+    PeriodicViewOptions,
     JournalViewOptions,
     DailyViewOptions,
     WeeklyViewOptions,
     MonthlyViewOptions,
     QuarterlyViewOptions,
     YearlyViewOptions,
+    JobPostViewOptions,
+    GamesJobViewOptions,
+    VfxJobViewOptions,
     ResourceOptions,
     DocumentOptions,
+    MeetingOptions,
     GoalOptions,
     ProjectOptions,
-    MeetingOptions,
+    JobPostOptions,
+    CompanyOptions,
+    VideoOptions,
+    YouTubeVideoOptions,
+    JournalOptions,
     PeriodicOptions,
+    PeriodicReviewOptions,
+    ChatOptions,
     promptOptionFactory,
     viewOptionFactory,
 };

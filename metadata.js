@@ -536,6 +536,12 @@ async function handleDateField(tp, field, promptOptions) {
 async function handleInputField(tp, field, templateParams, promptOptions) {
     let value;
     switch (field.name) {
+        case "prefix":
+            value = moment().format(promptOptions.date_fmt);
+            break;
+        case "suffix":
+            value = promptOptions.title_suffix;
+            break;
         case "progress":
             value = T.progressView({title: templateParams.title});
             break;
@@ -562,6 +568,7 @@ async function handleInputField(tp, field, templateParams, promptOptions) {
         case "overview":
             value = T.overview({
                 title: templateParams.title,
+                linked: false,
                 interval: promptOptions.period,
                 tags: templateParams.tags.asString(),
             });
