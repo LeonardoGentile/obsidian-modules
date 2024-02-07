@@ -269,7 +269,7 @@ class PeriodicOptions extends BaseOptions {
         this.prompt_for_task = true;
         this.prompt_for_alias = false;
         this.task_assume_yes = true;
-        this.ignore_fields.add("series");
+        this.ignore_fields.addMultiple(["tags", "series"]);
         this.default_values.push(
             {name: "series", value: true},
             {name: "day_planner", value: `[[${INCLUDE_TEMPLATE_DIR}/day-planner]]`},
@@ -287,6 +287,10 @@ class PeriodicReviewOptions extends PeriodicOptions {
     constructor(type) {
         super(type);
         this.prompt_for_task = false;
+        this.default_values = [
+            {name: "series", value: true},
+            {name: "includeFile", value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`},
+        ];
     }
 }
 
