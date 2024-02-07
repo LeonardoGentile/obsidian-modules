@@ -243,7 +243,7 @@ class JournalOptions extends BaseOptions {
     constructor(type, prefix, suffix) {
         super(type, prefix, suffix);
         this.period = 0;
-        this.files_paths = []; // bound to path in metadata-menu
+        this.files_paths = ["journal"];
         this.ignore_fields.add("tags");
         this.default_values = [
             {name: "includeFile", value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`},
