@@ -37,7 +37,7 @@ function getFormatSettings(className) {
  */
 function getSettingsForPeriodicNotes(superClassName) {
     const plugin = getPlugin();
-    superClassName = superClassName || "journal";
+    superClassName = superClassName || "periodic";
     const fileClassData = metadata.getFileClassData();
     const childFileClasses = metadata.getChildClasses(fileClassData, superClassName);
     const fileClassNames = Object.values(childFileClasses).map(value => value.className);
