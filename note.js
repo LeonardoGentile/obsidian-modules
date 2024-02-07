@@ -166,6 +166,13 @@ async function newNoteData(tp) {
     // Prepend note type
     sortedResultFields.unshift({name: "type", id: null, type: null, values: type});
 
+    // Remove nav bar when series is false
+    const navField = sortedResultFields.find(obj => obj.name === "nav")?.values;
+    const seriesField = sortedResultFields.find(obj => obj.name === "series")?.values;
+    const navIndex = sortedResultFields.findIndex(obj => obj.name === "nav");
+    if (navField && seriesField != undefined  && seriesField === false)
+        sortedResultFields[navIndex].values = null;
+
     // File includes
     const promptTemplate = sortedResultFields.find(obj => obj.name === "template")?.values;
     if (promptTemplate)
@@ -200,10 +207,14 @@ function splitAndFormatFields(fields) {
             map.inlineDV.push(asDataviewProp(field));
         if (constants.INLINE_JS_FIELD_NAMES.includes(field.name))
             map.inlineJS.push(asDataviewProp(field, "js"));
-        if (constants.HEAD_DQL_FIELD_NAMES.includes(field.name))
-            map.inlineDQL.push(asDataviewProp(field, "dql"));
-        if (constants.LOWER_DQL_FIELD_NAMES.includes(field.name))
-            map.lowerInlineDQL.push(asDataviewProp(field, "dql"));
+        if (constants.HEAD_DQL_FIELD_NAMES.includes(field.name)) {
+            if (field.values != undefined)
+                map.inlineDQL.push(asDataviewProp(field, "dql"));
+        }
+        if (constants.LOWER_DQL_FIELD_NAMES.includes(field.name)) {
+            if (field.values != undefined)
+                map.lowerInlineDQL.push(asDataviewProp(field, "dql"));
+        }
         if (constants.BODY_FIELD_NAMES.includes(field.name))
             map.body.push(field.values || "");
         if (constants.EXTRA_FIELD_NAMES.includes(field.name))
