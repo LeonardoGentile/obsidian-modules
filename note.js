@@ -7,6 +7,7 @@ const {promptYesOrNo} = self.require("_modules/prompt.js");
 const {textToFilename} = self.require("_modules/text.js");
 const yt = self.require("_modules/youtube.js");
 const constants = self.require("_modules/constants.js");
+const {toMoment} = self.require("_modules/periodic.js");
 
 /**
  * Prompts the user for default values and initializes variables.
@@ -117,7 +118,7 @@ async function newNoteData(tp) {
     // Prompt for aliases
     let alias;
     if (!promptOptions.prompt_for_alias)
-        alias = titleToAlias(tp, title, promptOptions.date_fmt, type);
+        alias = toMoment(title).format(promptOptions.date_fmt) + ` ${capitalizeWord(type)} Note`;
     const aliasFields = filterFieldsByNameAndType(fileClass.fields, ["alias"], "input");
     const aliasesFields = filterFieldsByNameAndType(fileClass.fields, ["aliases"], "yaml");
     for (const field of [...aliasFields, ...aliasesFields]) {
@@ -452,13 +453,13 @@ function filterFieldsById(fieldsToFilter, fieldsToExclude) {
  * @return {string} The user input value for the aliases field
  */
 function titleToAlias(tp, title, dateFmt, type) {
-    const fmt = dateFmt ?? "ddd Do MMM";
-    const fileDateISO = tp.date.now("YYYY-MM-DD", 0, title, "YYYY-MM-DD");
-    const fileDate = moment(fileDateISO).format(fmt);
-    const titleWODate = title.split(fileDateISO + "-")[1];
-    return titleWODate ?
+    dateFmt = dateFmt ?? "ddd Do MMM";
+    const fileDate = tp.date.now(dateFmt, 0, title, "YYYY-MM-DD");
+    const titleWODate = title.split(fileDate + "-")[1];
+    const alias = titleWODate ?
         capitalizeWords(titleWODate.split("-")).join(" ") :
         fileDate + " " + capitalizeWord(type) + " Note";
+    return alias;
 }
 
 module.exports = {

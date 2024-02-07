@@ -58,9 +58,44 @@ function getSettingsForFileClasses(plugin, classNames) {
     );
 }
 
+/**
+ * Converts a string (presumably a file title) to a Moment object
+ *
+ * Handles special cases like quarters and prefixed dates.
+ *
+ * Strings with a date prefix in the format YYYY-MM-DD will be parsed directly by Moment.
+ * Strings containing a quarter in the format YYYY-Q# will be parsed by getting the year and quarter,
+ * then passing to Moment's .quarter() method.
+ * Other strings are parsed directly by Moment.
+ *
+ * @param {string} text - The string to convert to a Moment object
+ * @returns {Moment} The Moment object representing the date
+ */
+function toMoment(text) {
+    /** Strings such as 2024-02-08-journal */
+    const prefixedRegex = /^(?<prefix>[0-9]+-[0-9]+-[0-9]+)(?<suffix>.*)/;
+    const match = text.match(prefixedRegex);
+    const datePrefix = match?.groups ? match.groups.prefix : null;
+    if (datePrefix) {
+        return moment(datePrefix);
+    }
+
+    const regex = /(?<year>[0-9]+)-Q(?<quarter>[1-4])/;
+    const isQuarter = text.replace(regex, "") === "";
+    /** Special case for Quarter since it cannot be parsed directly by moment */
+    if (isQuarter) {
+        const year = text.match(regex).groups.year;
+        const quarter = text.match(regex).groups.quarter;
+        return moment(year).quarter(quarter);
+    } else {
+        return moment(text);
+    }
+}
+
 module.exports = {
     getPlugin,
     getFormatSettings,
     getSettingsForFileClasses,
     getSettingsForPeriodicNotes,
+    toMoment,
 };

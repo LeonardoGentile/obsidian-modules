@@ -263,6 +263,7 @@ class PeriodicOptions extends BaseOptions {
         prefix = prefix || "";
         suffix = suffix || periodic.getFormatSettings(type) || moment().format(constants.DATE_FMT);
         super(type, prefix, suffix);
+        this.date_fmt = periodic.getFormatSettings(type) || this.date_fmt;
         this.prompt_for_title = false;
         this.prompt_for_suffix = true;
         this.prompt_for_task = true;
