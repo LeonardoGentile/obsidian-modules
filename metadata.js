@@ -568,8 +568,8 @@ async function handleInputField(tp, field, templateParams, promptOptions) {
         case "overview":
             value = T.overview({
                 title: templateParams.title,
-                linked: false,
-                interval: promptOptions.period,
+                linked: templateParams.linked,
+                interval: templateParams.period,
                 tags: templateParams.tags.asString(),
             });
             break;

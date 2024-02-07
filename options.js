@@ -256,11 +256,10 @@ class PeriodicOptions extends BaseOptions {
     /**
      * The constructor initializes the prompt options for periodic notes.
      * @param {string} type - Type of note the options instance is associated with
-     * @param {number} period - (Optional) The number of days between periodic reviews, the default is 0.
      * @param {string} prefix - (Optional) Preformatted title prefix, the default is an empty string.
      * @param {string} suffix - (Optional) Preformatted title suffix, the default is today's date.
     */
-    constructor(type, period, prefix, suffix) {
+    constructor(type, prefix, suffix) {
         prefix = prefix || "";
         suffix = suffix || periodic.getFormatSettings(type) || moment().format(constants.DATE_FMT);
         super(type, prefix, suffix);
@@ -268,7 +267,6 @@ class PeriodicOptions extends BaseOptions {
         this.prompt_for_suffix = true;
         this.prompt_for_task = true;
         this.prompt_for_alias = false;
-        this.period = period || 0;
         this.task_assume_yes = true;
         this.ignore_fields.add("series");
         this.default_values.push(
@@ -284,10 +282,9 @@ class PeriodicReviewOptions extends PeriodicOptions {
     /**
      * The constructor initializes the prompt options for periodic review notes.
      * @param {string} type - Type of note the options instance is associated with
-     * @param {number} period - The number of days between periodic reviews.
     */
-    constructor(type, period) {
-        super(type, period);
+    constructor(type) {
+        super(type);
         this.prompt_for_task = false;
     }
 }
@@ -333,6 +330,8 @@ class BaseViewOptions {
     constructor(type, title) {
         this.type = type;
         this.title = title;
+        this.period = -1;
+        this.linked = false;
         this.tags = new StringSet([]);
     }
 }
@@ -345,10 +344,23 @@ class ProjectViewOptions extends BaseViewOptions {
     */
     constructor(type, title) {
         super(type, title);
+        this.linked = true;
         this.tags.addMultiple([
-            "journal", "reference", "resource",
-            "yt", "chat",
+            "journal", "reference", "resource", "yt", "chat",
         ]);
+    }
+}
+
+/** Sets default view options for journals. */
+class JournalViewOptions extends BaseViewOptions {
+    /** Initializes journal view options with default tags.
+     * @param {string} type - Type of note the options instance is associated with
+     * @param {string} title - Title of note
+    */
+    constructor(type, title) {
+        super(type, title);
+        this.linked = true;
+        this.tags.addMultiple(["reference", "chat", "yt"]);
     }
 }
 
@@ -360,27 +372,15 @@ class PeriodicViewOptions extends BaseViewOptions {
     */
     constructor(type, title) {
         super(type, title);
+        this.period = 0; // every day
         this.tags.addMultiple([
             "reference", "chat", "yt", "goal", "project",
-            "daily", "weekly", "monthly", "quarterly",
         ]);
     }
 }
 
-/** Sets default view options for journals. */
-class JournalViewOptions extends PeriodicViewOptions {
-    /** Initializes journal view options with default tags.
-     * @param {string} type - Type of note the options instance is associated with
-     * @param {string} title - Title of note
-    */
-    constructor(type, title) {
-        super(type, title);
-        this.tags.replaceWith(["reference", "chat", "yt"]);
-    }
-}
-
 /** Sets default view options for daily notes. */
-class DailyViewOptions extends JournalViewOptions {
+class DailyViewOptions extends PeriodicViewOptions {
     /** Initializes daily view options with default tags.
      * @param {string} type - Type of note the options instance is associated with
      * @param {string} title - Title of note
@@ -392,50 +392,54 @@ class DailyViewOptions extends JournalViewOptions {
 }
 
 /** Sets default view options for weekly notes. */
-class WeeklyViewOptions extends DailyViewOptions {
+class WeeklyViewOptions extends BaseViewOptions {
     /** Initializes weekly view options with default tags.
      * @param {string} type - Type of note the options instance is associated with
      * @param {string} title - Title of note
     */
     constructor(type, title) {
         super(type, title);
-        this.tags.replace("journal", "daily");
+        this.period = 7;
+        this.tags.add("daily");
     }
 }
 
 /** Sets default view options for monthly notes. */
-class MonthlyViewOptions extends DailyViewOptions {
+class MonthlyViewOptions extends BaseViewOptions {
     /** Initializes monthly view options with default tags.
      * @param {string} type - Type of note the options instance is associated with
      * @param {string} title - Title of note
     */
     constructor(type, title) {
         super(type, title);
-        this.tags.replace("journal", "weekly");
+        this.period = moment(title).daysInMonth();
+        this.tags.add("weekly");
     }
 }
 
 /** Sets default view options for quarterly notes. */
-class QuarterlyViewOptions extends DailyViewOptions {
+class QuarterlyViewOptions extends BaseViewOptions {
     /** Initializes quarterly view options with default tags.
      * @param {string} type - Type of note the options instance is associated with
      * @param {string} title - Title of note
     */
     constructor(type, title) {
         super(type, title);
-        this.tags.replace("journal", "monthly");
+        this.period = 90;
+        this.tags.add("monthly");
     }
 }
 
 /** Sets default view options for yearly notes. */
-class YearlyViewOptions extends DailyViewOptions {
+class YearlyViewOptions extends BaseViewOptions {
     /** Initializes yearly view options with default tags.
      * @param {string} type - Type of note the options instance is associated with
      * @param {string} title - Title of note
     */
     constructor(type, title) {
         super(type, title);
-        this.tags.replace("journal", "quarterly");
+        this.period = moment(title).isLeapYear() ? 366 : 365;
+        this.tags.add("quarterly");
     }
 }
 
@@ -447,31 +451,34 @@ class JobPostViewOptions extends BaseViewOptions {
     */
     constructor(type, title) {
         super(type, title);
+        this.linked = true;
         this.tags.add("job-post");
     }
 }
 
 /** Sets default view options for games job posts. */
-class GamesJobViewOptions extends JobPostViewOptions {
+class GamesJobViewOptions extends BaseViewOptions {
     /** Initializes games job post view options with default tags.
      * @param {string} type - Type of note the options instance is associated with
      * @param {string} title - Title of note
     */
     constructor(type, title) {
         super(type, title);
-        this.tags.replaceWith(["games-job"]);
+        this.linked = true;
+        this.tags.add("games-job");
     }
 }
 
 /** Sets default view options for vfx job posts. */
-class VfxJobViewOptions extends JobPostViewOptions {
+class VfxJobViewOptions extends BaseViewOptions {
     /** Initializes vfx job view options with default tags.
      * @param {string} type - Type of note the options instance is associated with
      * @param {string} title - Title of note
     */
     constructor(type, title) {
         super(type, title);
-        this.tags.replaceWith(["vfx-job"]);
+        this.linked = true;
+        this.tags.add("vfx-job");
     }
 }
 
@@ -490,13 +497,13 @@ function promptOptionFactory(type) {
         case "daily":
             return new PeriodicOptions(type);
         case "weekly":
-            return new PeriodicReviewOptions(type, 7);
+            return new PeriodicReviewOptions(type);
         case "monthly":
-            return new PeriodicReviewOptions(type, 30);
+            return new PeriodicReviewOptions(type);
         case "quarterly":
-            return new PeriodicReviewOptions(type, 90);
+            return new PeriodicReviewOptions(type);
         case "yearly":
-            return new PeriodicReviewOptions(type, 365);
+            return new PeriodicReviewOptions(type);
         case "document":
             return new DocumentOptions(type);
         case "book":
