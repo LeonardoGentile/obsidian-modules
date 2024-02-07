@@ -32,7 +32,12 @@ async function newNoteData(tp) {
 
     // Should prompt for title prefix?
     const suffix = promptOptions.prompt_for_suffix ?
-        await tp.system.prompt(`Suffix?`, moment().format(promptOptions.date_fmt)) :
+        await tp.system.prompt(
+            `Suffix?`,
+            promptOptions.title_suffix ?
+                moment().format(promptOptions.title_suffix) :
+                moment().format(promptOptions.date_fmt)
+        ) :
         false;
 
     if (prefix) {

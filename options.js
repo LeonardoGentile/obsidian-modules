@@ -94,7 +94,6 @@ class ResourceOptions extends BaseOptions {
     */
     constructor(type, prefix, suffix) {
         super(type, prefix, suffix);
-        this.prompt_for_prefix = true;
         this.files_paths = ["library"];
         this.ignore_fields.add("status");
         this.default_values = [
@@ -129,7 +128,6 @@ class MeetingOptions extends BaseOptions {
     constructor(type) {
         super(type);
         this.prompt_for_task = true;
-        this.prompt_for_prefix = true;
         this.task_assume_yes = false;
         this.default_values = [
             {name: "includeFile", value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`},
@@ -142,7 +140,7 @@ class MeetingOptions extends BaseOptions {
  * It enables prompting for tasks and attachments when creating a new goal note. It also
  * sets the progress bar view to show total progress for goals.
  */
-class GoalOptions extends ResourceOptions {
+class GoalOptions extends BaseOptions {
     /**
      * Sets the default prompt options
      * @param {string} type - Type of note the options instance is associated with
@@ -153,18 +151,19 @@ class GoalOptions extends ResourceOptions {
         this.task_assume_yes = true;
         this.prompt_for_attachment = true;
         this.progress_bar_view = progressView.total;
-        this.files_paths = []; // bound to path in metadata-menu
-        this.ignore_fields.replace("status", "tags");
+        this.ignore_fields.add("tags");
+        this.default_values = [
+            {name: "includeFile", value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`},
+        ];
     }
 }
 
 /**
- * The ProjectOptions class extends BaseOptions to set default prompt options
- * for project notes.
+ * Sets default options for project notes.
  * It enables prompting for tasks when creating a new project note.
  * It also sets the progress bar view to show total progress for projects.
 */
-class ProjectOptions extends ResourceOptions {
+class ProjectOptions extends BaseOptions {
     /**
      * Sets the default prompt options
      * @param {string} type - Type of note the options instance is associated with
@@ -174,15 +173,17 @@ class ProjectOptions extends ResourceOptions {
         this.prompt_for_task = true;
         this.task_assume_yes = true;
         this.progress_bar_view = progressView.total;
-        this.files_paths = []; // bound to path in metadata-menu
-        this.ignore_fields.replace("status", "tags");
+        this.ignore_fields.add("tags");
+        this.default_values = [
+            {name: "includeFile", value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`},
+        ];
     }
 }
 
 /**
  * Adds properties for managing job post notes.
 */
-class JobPostOptions extends ResourceOptions {
+class JobPostOptions extends BaseOptions {
     /**
      * Sets the default prompt options
      * @param {string} type - Type of note the options instance is associated with
@@ -190,48 +191,37 @@ class JobPostOptions extends ResourceOptions {
     constructor(type) {
         super(type);
         this.prompt_for_task = true;
-        this.task_assume_yes = false;
         this.ignore_fields.addMultiple(["directLink", "recruiterLink"]);
-        this.ignore_fields.delete("status");
-        this.default_values = [];
+        this.files_paths = ["library"];
     }
 }
 
 /**
  * Adds properties for managing company notes.
 */
-class CompanyOptions extends ResourceOptions {
+class CompanyOptions extends BaseOptions {
     /**
      * Sets the default prompt options
      * @param {string} type - Type of note the options instance is associated with
     */
     constructor(type) {
         super(type);
-        this.prompt_for_task = false;
-        this.task_assume_yes = false;
         this.ignore_fields.addMultiple(["location", "link"]);
-        this.ignore_fields.delete("status");
-        this.default_values = [];
+        this.files_paths = ["library"];
     }
 }
 
 /**
  * Adds properties for managing video notes.
 */
-class VideoOptions extends ResourceOptions {
+class VideoOptions extends BaseOptions {
     /**
      * Sets the default prompt options
      * @param {string} type - Type of note the options instance is associated with
     */
     constructor(type) {
         super(type);
-        this.prompt_for_task = false;
-        this.prompt_for_prefix = false;
-        this.prompt_for_suffix = false;
-        this.task_assume_yes = false;
         this.files_paths = []; // bound to path in metadata-menu
-        this.ignore_fields.delete("status");
-        this.default_values = [];
         this.selector = null;
         this.url = null;
     }
@@ -243,7 +233,7 @@ class VideoOptions extends ResourceOptions {
 class YouTubeVideoOptions extends VideoOptions {}
 
 /** Adds properties for managing periodic notes. */
-class JournalOptions extends ResourceOptions {
+class JournalOptions extends BaseOptions {
     /**
      * The constructor initializes the prompt options for periodic notes.
      * @param {string} type - Type of note the options instance is associated with
@@ -252,12 +242,9 @@ class JournalOptions extends ResourceOptions {
     */
     constructor(type, prefix, suffix) {
         super(type, prefix, suffix);
-        this.prompt_for_title = true;
-        this.prompt_for_suffix = false;
-        this.date_fmt = periodic.getFormatSettings(type) || this.date_fmt;
         this.period = 0;
         this.files_paths = []; // bound to path in metadata-menu
-        this.ignore_fields.replace("status", "tags");
+        this.ignore_fields.add("tags");
         this.default_values = [
             {name: "includeFile", value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`},
         ];
@@ -265,7 +252,7 @@ class JournalOptions extends ResourceOptions {
 }
 
 /** Adds properties for managing periodic notes. */
-class PeriodicOptions extends JournalOptions {
+class PeriodicOptions extends BaseOptions {
     /**
      * The constructor initializes the prompt options for periodic notes.
      * @param {string} type - Type of note the options instance is associated with
@@ -275,10 +262,9 @@ class PeriodicOptions extends JournalOptions {
     */
     constructor(type, period, prefix, suffix) {
         prefix = prefix || "";
-        suffix = suffix || moment().format(constants.DATE_FMT);
+        suffix = suffix || periodic.getFormatSettings(type) || moment().format(constants.DATE_FMT);
         super(type, prefix, suffix);
         this.prompt_for_title = false;
-        this.prompt_for_prefix = false;
         this.prompt_for_suffix = true;
         this.prompt_for_task = true;
         this.prompt_for_alias = false;
@@ -288,6 +274,7 @@ class PeriodicOptions extends JournalOptions {
         this.default_values.push(
             {name: "series", value: true},
             {name: "day_planner", value: `[[${INCLUDE_TEMPLATE_DIR}/day-planner]]`},
+            {name: "includeFile", value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`},
         );
     }
 }
@@ -302,12 +289,6 @@ class PeriodicReviewOptions extends PeriodicOptions {
     constructor(type, period) {
         super(type, period);
         this.prompt_for_task = false;
-        this.task_assume_yes = false;
-        this.ignore_fields.add("series");
-        this.default_values = [
-            {name: "series", value: true},
-            {name: "includeFile", value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`},
-        ];
     }
 }
 
@@ -504,6 +485,8 @@ function promptOptionFactory(type) {
     switch (type) {
         case "journal":
             return new JournalOptions(type);
+        case "periodic":
+            return new PeriodicOptions(type);
         case "daily":
             return new PeriodicOptions(type);
         case "weekly":
