@@ -103,6 +103,25 @@ class ResourceOptions extends BaseOptions {
 }
 
 /**
+ * Sets default options for clippings.
+*/
+class ClippingOptions extends BaseOptions {}
+
+/**
+ * Sets default options for clipped articles.
+*/
+class ArticleOptions extends ClippingOptions {
+    /**
+     * Sets the default prompt options
+     * @param {string} type - Type of note the options instance is associated with
+    */
+    constructor(type) {
+        super(type);
+        this.files_paths = ["clipping"];
+    }
+}
+
+/**
  * Sets default options for documents.
 */
 class DocumentOptions extends BaseOptions {
@@ -540,9 +559,9 @@ function promptOptionFactory(type) {
         case "vfx-job":
             return new JobPostOptions(type);
         case "clipping":
-            return new ResourceOptions(type);
+            return new ClippingOptions(type);
         case "article":
-            return new ResourceOptions(type);
+            return new ArticleOptions(type);
         case "meeting":
             return new MeetingOptions(type);
         case "interview":
