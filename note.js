@@ -66,7 +66,8 @@ async function newNoteData(tp) {
         promptOptions.files_paths :
         fileClass.filesPaths;
 
-    if (url) {
+    // Special case for youtube urls
+    if (url && ["yt-video"].includes(type)) {
         promptOptions.url = url;
         promptOptions.querySelector = await yt.fetchUrl(url);
         const titleContent = yt.getTitle(promptOptions.querySelector);
