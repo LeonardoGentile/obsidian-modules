@@ -93,7 +93,7 @@ function toMoment(text) {
         const year = text.match(weeklyRegex).groups.year;
         const week = text.match(weeklyRegex).groups.week;
         return moment(year).week(week);
-    else if (isQuarterly) {
+    } else if (isQuarterly) {
         const year = text.match(quarterlyRegex).groups.year;
         const quarter = text.match(quarterlyRegex).groups.quarter;
         return moment(year).quarter(quarter);
