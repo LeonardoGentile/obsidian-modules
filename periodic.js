@@ -83,7 +83,7 @@ function toMoment(text) {
     const quarterlyRegex = /(?<year>[0-9]+)-Q(?<quarter>[1-4])/;
     const isQuarterly = text.replace(quarterlyRegex, "") === "";
     const weeklyRegex = /(?<year>[0-9]+)-W(?<week>[0-9]+)/;
-    const isWeekly = text.replace(quarterlyRegex, "") === "";
+    const isWeekly = text.replace(weeklyRegex, "") === "";
 
     /**
      * Special cases for Quarterly and Weekly notes since the date cannot be parsed
