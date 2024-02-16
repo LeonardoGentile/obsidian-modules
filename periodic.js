@@ -80,12 +80,22 @@ function toMoment(text) {
         return moment(datePrefix);
     }
 
-    const regex = /(?<year>[0-9]+)-Q(?<quarter>[1-4])/;
-    const isQuarter = text.replace(regex, "") === "";
-    /** Special case for Quarter since it cannot be parsed directly by moment */
-    if (isQuarter) {
-        const year = text.match(regex).groups.year;
-        const quarter = text.match(regex).groups.quarter;
+    const quarterlyRegex = /(?<year>[0-9]+)-Q(?<quarter>[1-4])/;
+    const isQuarterly = text.replace(quarterlyRegex, "") === "";
+    const weeklyRegex = /(?<year>[0-9]+)-W(?<week>[0-9]+)/;
+    const isWeekly = text.replace(quarterlyRegex, "") === "";
+
+    /**
+     * Special cases for Quarterly and Weekly notes since the date cannot be parsed
+     * directly by moment
+    */
+    if (isWeekly) {
+        const year = text.match(weeklyRegex).groups.year;
+        const week = text.match(weeklyRegex).groups.week;
+        return moment(year).week(week);
+    else if (isQuarterly) {
+        const year = text.match(quarterlyRegex).groups.year;
+        const quarter = text.match(quarterlyRegex).groups.quarter;
         return moment(year).quarter(quarter);
     } else {
         return moment(text);
