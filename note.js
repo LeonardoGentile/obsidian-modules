@@ -182,7 +182,7 @@ async function newNoteData(tp) {
     if (includeFile)
         sortedResultFields.push({name: "includeFile", id: null, type: null, values: `${includeFile}`});
     const dayPlanner = promptOptions.getValueForField("day_planner");
-    if (dayPlanner)
+    if (tasks && dayPlanner)
         sortedResultFields.push({name: "dayPlanner", id: null, type: null, values: `${dayPlanner}`});
 
     if (tasks)
