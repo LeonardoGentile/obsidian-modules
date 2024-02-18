@@ -128,4 +128,9 @@ module.exports = {
     "job-granted": JOB_GRANTED,
     "job-denied": JOB_DENIED,
     "interview-accepted": INTERVIEW_ACCEPTED,
+    "action-items" : {
+        icon: "📥",
+        header: "Action Item",
+        headerPlural: "Action Items"
+    }
 };
