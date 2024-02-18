@@ -92,9 +92,9 @@ async function multiSuggester(
  */
 async function tagSuggester(tp) {
     const tags = Object.keys(app.metadataCache.getTags());
-    let selection = await tp.system.suggester([...tags, "Make New"], [...tags, "Make New"]);
-    if (selection === "Make New")
-        selection = await tp.system.prompt("new tag");
+    let selection = await tp.system.suggester(["✨New✨", ...tags], ["✨New✨", ...tags]);
+    if (selection === "✨New✨")
+        selection = await tp.system.prompt("New tag");
 
     return selection;
 }
