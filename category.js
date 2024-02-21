@@ -113,6 +113,7 @@ module.exports = {
         headerPlural: "Chats",
         view: "progressButtonTV",
     },
+    "company": COMPANY,
     "game-company": {...COMPANY, ...{
         icon: "🎮",
         header: "Game Company",
@@ -125,6 +126,7 @@ module.exports = {
     }},
     "games-job": JOB_POST_INFO,
     "vfx-job": JOB_POST_INFO,
+    "job-post": JOB_POST_INFO,
     "job-granted": JOB_GRANTED,
     "job-denied": JOB_DENIED,
     "interview-accepted": INTERVIEW_ACCEPTED,
