@@ -384,7 +384,7 @@ class JournalViewOptions extends BaseViewOptions {
     constructor(type, title) {
         super(type, title);
         this.linked = true;
-        this.tags.addMultiple(["reference", "chat", "yt"]);
+        this.tags.addMultiple(["reference", "resource", "chat", "yt"]);
     }
 }
 
@@ -398,7 +398,7 @@ class PeriodicViewOptions extends BaseViewOptions {
         super(type, title);
         this.period = 0; // every day
         this.tags.addMultiple([
-            "reference", "chat", "yt", "goal", "project",
+            "reference", "resource", "chat", "yt", "goal", "project",
         ]);
     }
 }
