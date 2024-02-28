@@ -43,6 +43,8 @@ const INLINE_DV_FIELD_NAMES = [
     "workFrom",
     "lastContact",
     "appSent",
+    // interview
+    "job-post",
     // yt-video
     "url",
     "published",

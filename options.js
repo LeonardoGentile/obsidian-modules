@@ -354,7 +354,7 @@ class BaseViewOptions {
     constructor(type, title) {
         this.type = type;
         this.title = title;
-        this.period = -1;
+        this.period = -1;  // -1: no period, 0: 1 day, 7: 1 week, etc...
         this.linked = false;
         this.tags = new StringSet([]);
     }
@@ -467,6 +467,43 @@ class YearlyViewOptions extends BaseViewOptions {
     }
 }
 
+/** Sets default view options for company notes. */
+class CompanyViewOptions extends BaseViewOptions {
+    /** Initializes job post view options with default tags.
+     * @param {string} type - Type of note the options instance is associated with
+     * @param {string} title - Title of note
+    */
+    constructor(type, title) {
+        super(type, title);
+        this.linked = true;
+        this.tags.addMultiple(["job-post", "meeting", "reference", "resource"]);
+    }
+}
+
+/** Sets default view options for Game company notes. */
+class GameCompanyViewOptions extends CompanyViewOptions {
+    /** Initializes job post view options with default tags.
+     * @param {string} type - Type of note the options instance is associated with
+     * @param {string} title - Title of note
+    */
+    constructor(type, title) {
+        super(type, title);
+        this.tags.replace("job-post", "games-job");
+    }
+}
+
+/** Sets default view options for VFX company notes. */
+class VFXCompanyViewOptions extends CompanyViewOptions {
+    /** Initializes job post view options with default tags.
+     * @param {string} type - Type of note the options instance is associated with
+     * @param {string} title - Title of note
+    */
+    constructor(type, title) {
+        super(type, title);
+        this.tags.replace("job-post", "vfx-job");
+    }
+}
+
 /** Sets default view options for job post notes. */
 class JobPostViewOptions extends BaseViewOptions {
     /** Initializes job post view options with default tags.
@@ -476,33 +513,7 @@ class JobPostViewOptions extends BaseViewOptions {
     constructor(type, title) {
         super(type, title);
         this.linked = true;
-        this.tags.add("job-post");
-    }
-}
-
-/** Sets default view options for games job posts. */
-class GamesJobViewOptions extends BaseViewOptions {
-    /** Initializes games job post view options with default tags.
-     * @param {string} type - Type of note the options instance is associated with
-     * @param {string} title - Title of note
-    */
-    constructor(type, title) {
-        super(type, title);
-        this.linked = true;
-        this.tags.add("games-job");
-    }
-}
-
-/** Sets default view options for vfx job posts. */
-class VfxJobViewOptions extends BaseViewOptions {
-    /** Initializes vfx job view options with default tags.
-     * @param {string} type - Type of note the options instance is associated with
-     * @param {string} title - Title of note
-    */
-    constructor(type, title) {
-        super(type, title);
-        this.linked = true;
-        this.tags.add("vfx-job");
+        this.tags.addMultiple(["journal", "meeting", "reference", "resource"]);
     }
 }
 
@@ -595,11 +606,17 @@ function viewOptionFactory(type, title) {
         case "yearly":
             return new YearlyViewOptions(type, title);
         case "company":
-            return new JobPostViewOptions(type, title);
+            return new CompanyViewOptions(type, title);
         case "game-company":
-            return new GamesJobViewOptions(type, title);
+            return new GameCompanyViewOptions(type, title);
         case "vfx-company":
-            return new VfxJobViewOptions(type, title);
+            return new VFXCompanyViewOptions(type, title);
+        case "job-post":
+            return new JobPostViewOptions(type, title);
+        case "games-job":
+            return new JobPostViewOptions(type, title);
+        case "vfx-job":
+            return new JobPostViewOptions(type, title);
         case "project":
             return new ProjectViewOptions(type, title);
         default:
@@ -616,9 +633,10 @@ module.exports = {
     MonthlyViewOptions,
     QuarterlyViewOptions,
     YearlyViewOptions,
+    CompanyViewOptions,
+    GameCompanyViewOptions,
+    VFXCompanyViewOptions,
     JobPostViewOptions,
-    GamesJobViewOptions,
-    VfxJobViewOptions,
     ResourceOptions,
     DocumentOptions,
     MeetingOptions,
