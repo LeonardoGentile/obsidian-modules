@@ -1,5 +1,7 @@
 const metadata = self.require("_modules/metadata.js");
 
+const PREFIXED_REGEX = /^(?<prefix>[0-9]+-[0-9]+-[0-9]+)(?<suffix>.*)/;
+
 /**
  * Gets the Periodic notes plugin instance.
  *
@@ -73,8 +75,7 @@ function getSettingsForFileClasses(plugin, classNames) {
  */
 function toMoment(text) {
     /** Strings such as 2024-02-08-journal */
-    const prefixedRegex = /^(?<prefix>[0-9]+-[0-9]+-[0-9]+)(?<suffix>.*)/;
-    const match = text.match(prefixedRegex);
+    const match = text.match(PREFIXED_REGEX);
     const datePrefix = match?.groups ? match.groups.prefix : null;
     if (datePrefix) {
         return moment(datePrefix);
@@ -103,6 +104,7 @@ function toMoment(text) {
 }
 
 module.exports = {
+    PREFIXED_REGEX,
     getPlugin,
     getFormatSettings,
     getSettingsForFileClasses,
