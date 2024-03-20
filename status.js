@@ -4,8 +4,8 @@ const UNKNOWN = "unknown";
 
 const ACTIVE_MAIN = {
     "todo": "todo",
-    "waiting": "waiting",
     "in-progress": "in-progress",
+    "waiting": "waiting",
     "hold": "hold",
     "blocked": "blocked",
 };
