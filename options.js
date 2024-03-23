@@ -45,7 +45,7 @@ class BaseOptions {
          * - Explicit value setting is through `default_values` or `getValueForField` at runtime
          * - Implicit value for values not set explicitely is null
          */
-        this.ignore_fields = new StringSet([
+        this._ignore_fields = new StringSet([
             "cssClasses", // empty
             "created", // automatically generated at creation time
             "modified", // automatically generated at creation time
@@ -64,6 +64,22 @@ class BaseOptions {
             this.title_prefix +
             (this.title_prefix ? this.title_sep + this.title_suffix : this.title_suffix)
         );
+    }
+
+    /**
+     * Setter for the field to hide its implementation details.
+     * By assigning a string or array to the field they will be added to the underlying StringSet
+     * @param {string|Array} val - A single or multiple fields to ignore
+     */
+    set ignore_fields(val){
+        this._ignore_fields.add(val);
+    }
+
+    /**
+     * Get the underlying values stored in the StringSet
+     */
+    get ignore_fields() {
+        return this._ignore_fields;
     }
 
     /**
@@ -95,7 +111,7 @@ class ResourceOptions extends BaseOptions {
     constructor(type, prefix, suffix) {
         super(type, prefix, suffix);
         this.files_paths = ["library"];
-        this.ignore_fields.add("status");
+        this.ignore_fields = ["status"];
         this.default_values = [
             {name: "includeFile", value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`},
         ];
@@ -132,7 +148,7 @@ class DocumentOptions extends BaseOptions {
     constructor(type) {
         super(type);
         this.files_paths = []; // bound to path in metadata-menu
-        this.ignore_fields.add("tags");
+        this.ignore_fields = ["tags"];
     }
 }
 
@@ -170,7 +186,7 @@ class GoalOptions extends BaseOptions {
         this.task_assume_yes = true;
         this.prompt_for_attachment = true;
         this.progress_bar_view = progressView.total;
-        this.ignore_fields.add("tags");
+        this.ignore_fields = ["tags"];
         this.default_values = [
             {name: "includeFile", value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`},
         ];
@@ -192,7 +208,7 @@ class ProjectOptions extends BaseOptions {
         this.prompt_for_task = true;
         this.task_assume_yes = true;
         this.progress_bar_view = progressView.total;
-        this.ignore_fields.add("tags");
+        this.ignore_fields = ["tags"];
         this.default_values = [
             {name: "includeFile", value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`},
         ];
@@ -210,7 +226,7 @@ class JobPostOptions extends BaseOptions {
     constructor(type) {
         super(type);
         this.prompt_for_task = true;
-        this.ignore_fields.add(["directLink", "recruiterLink"]);
+        this.ignore_fields = ["directLink", "recruiterLink"];
         this.files_paths = ["library"];
     }
 }
@@ -225,7 +241,7 @@ class CompanyOptions extends BaseOptions {
     */
     constructor(type) {
         super(type);
-        this.ignore_fields.add(["location", "link"]);
+        this.ignore_fields = ["location", "link"];
         this.files_paths = ["library"];
     }
 }
@@ -263,7 +279,7 @@ class JournalOptions extends BaseOptions {
         super(type, prefix, suffix);
         this.period = 0;
         this.files_paths = ["journal"];
-        this.ignore_fields.add("tags");
+        this.ignore_fields = ["tags"];
         this.default_values = [
             {name: "includeFile", value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`},
         ];
@@ -288,7 +304,7 @@ class PeriodicOptions extends BaseOptions {
         this.prompt_for_task = true;
         this.prompt_for_alias = false;
         this.task_assume_yes = true;
-        this.ignore_fields.add(["tags", "series"]);
+        this.ignore_fields = ["tags", "series"];
         this.default_values.push(
             {name: "series", value: true},
             {name: "day_planner", value: `[[${INCLUDE_TEMPLATE_DIR}/day-planner]]`},
@@ -324,14 +340,14 @@ class ChatOptions extends BaseOptions {
     constructor(type) {
         super(type);
         this.files_paths = []; // bound to path in metadata-menu
-        this.ignore_fields.add([
+        this.ignore_fields = [
             "stop", // null default value
             "top_p",
             "presence_penalty",
             "frequency_penalty",
             "stream",
             "n",
-        ]);
+        ];
         this.default_values = [
             {name: "temperature", value: constants.temperature},
             {name: "top_p", value: constants.top_p},
