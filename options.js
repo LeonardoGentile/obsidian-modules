@@ -210,7 +210,7 @@ class JobPostOptions extends BaseOptions {
     constructor(type) {
         super(type);
         this.prompt_for_task = true;
-        this.ignore_fields.addMultiple(["directLink", "recruiterLink"]);
+        this.ignore_fields.add(["directLink", "recruiterLink"]);
         this.files_paths = ["library"];
     }
 }
@@ -225,7 +225,7 @@ class CompanyOptions extends BaseOptions {
     */
     constructor(type) {
         super(type);
-        this.ignore_fields.addMultiple(["location", "link"]);
+        this.ignore_fields.add(["location", "link"]);
         this.files_paths = ["library"];
     }
 }
@@ -288,7 +288,7 @@ class PeriodicOptions extends BaseOptions {
         this.prompt_for_task = true;
         this.prompt_for_alias = false;
         this.task_assume_yes = true;
-        this.ignore_fields.addMultiple(["tags", "series"]);
+        this.ignore_fields.add(["tags", "series"]);
         this.default_values.push(
             {name: "series", value: true},
             {name: "day_planner", value: `[[${INCLUDE_TEMPLATE_DIR}/day-planner]]`},
@@ -324,7 +324,7 @@ class ChatOptions extends BaseOptions {
     constructor(type) {
         super(type);
         this.files_paths = []; // bound to path in metadata-menu
-        this.ignore_fields.addMultiple([
+        this.ignore_fields.add([
             "stop", // null default value
             "top_p",
             "presence_penalty",
@@ -369,7 +369,7 @@ class ProjectViewOptions extends BaseViewOptions {
     constructor(type, title) {
         super(type, title);
         this.linked = true;
-        this.tags.addMultiple([
+        this.tags.add([
             "journal", "reference", "resource", "yt", "chat",
         ]);
     }
@@ -384,7 +384,7 @@ class JournalViewOptions extends BaseViewOptions {
     constructor(type, title) {
         super(type, title);
         this.linked = true;
-        this.tags.addMultiple(["reference", "resource", "chat", "yt"]);
+        this.tags.add(["reference", "resource", "chat", "yt"]);
     }
 }
 
@@ -397,7 +397,7 @@ class PeriodicViewOptions extends BaseViewOptions {
     constructor(type, title) {
         super(type, title);
         this.period = 0; // every day
-        this.tags.addMultiple([
+        this.tags.add([
             "reference", "resource", "chat", "yt", "goal", "project",
         ]);
     }
@@ -476,7 +476,7 @@ class CompanyViewOptions extends BaseViewOptions {
     constructor(type, title) {
         super(type, title);
         this.linked = true;
-        this.tags.addMultiple(["job-post", "meeting", "reference", "resource"]);
+        this.tags.add(["job-post", "meeting", "reference", "resource"]);
     }
 }
 
@@ -513,7 +513,7 @@ class JobPostViewOptions extends BaseViewOptions {
     constructor(type, title) {
         super(type, title);
         this.linked = true;
-        this.tags.addMultiple(["journal", "meeting", "reference", "resource"]);
+        this.tags.add(["journal", "meeting", "reference", "resource"]);
     }
 }
 

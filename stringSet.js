@@ -16,10 +16,19 @@ StringSet.prototype.checkType = function(items) {
     });
 };
 
-// Adds a single item with type checking
-StringSet.prototype.add = function(item) {
-    this.checkType([item]);
-    this.set.add(item);
+// Adds a single/multiple item with type checking
+StringSet.prototype.add = function(items) {
+    let itemsArray = [];
+    if (!Array.isArray(items)) {
+        itemsArray.push(items)
+    }
+    else {
+        itemsArray = items
+    }
+    this.checkType(itemsArray);
+    itemsArray.forEach(item => {
+        this.set.add(item);
+    });
 };
 
 // Deletes a single item without needing type checking
@@ -37,13 +46,6 @@ StringSet.prototype.clear = function() {
     return this.set.clear();
 };
 
-// Adds multiple items
-StringSet.prototype.addMultiple = function(items) {
-    this.checkType(items);
-    items.forEach(item => {
-        this.set.add(item);
-    });
-};
 
 // Removes multiple items
 StringSet.prototype.deleteMultiple = function(items) {
@@ -63,7 +65,7 @@ StringSet.prototype.replace = function(oldItem, newItem) {
 StringSet.prototype.replaceWith = function(items) {
     this.checkType(items);
     this.set.clear();
-    this.addMultiple(items);
+    this.add(items);
 };
 
 // String representation
