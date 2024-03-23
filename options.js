@@ -2,6 +2,7 @@ const StringSet = self.require("_modules/stringSet.js");
 const constants = self.require("_modules/constants.js");
 const periodic = self.require("_modules/periodic.js");
 const {INCLUDE_TEMPLATE_DIR} = self.require("_modules/constants.js");
+const OPTIONS_CONFIG = {};
 
 /**
  * Defines properties for Dataview progress bars.
@@ -22,8 +23,9 @@ class BaseOptions {
      * @param {string} type - Type of note the options instance is associated with
      * @param {string} prefix - (Optional) Preformatted title prefix, the default is today's date.
      * @param {string} suffix - (Optional) Preformatted title suffix, the default is the note type as string.
+     * @param {object} optionsConfig - (Optional) Object initializer
      */
-    constructor(type, prefix, suffix) {
+    constructor(type, prefix, suffix, optionsConfig) {
         this.type = type;
         this.date_fmt = constants.DATE_FMT;
         this.title_sep = constants.TITLE_SEP;
@@ -53,6 +55,22 @@ class BaseOptions {
         ]);
         this.files_paths = [];
         this.default_values = []; // [{name: field_name, value: default_value}]
+
+        this.initialize(optionsConfig);
+    }
+
+    /**
+     * Override and extends the default values from a configuration object initializer
+     * @param {object|null} optionsConfig - object initializer
+     */
+    initialize(optionsConfig){
+        if(optionsConfig){
+            for (let prop in optionsConfig) {
+                if (this.hasOwnProperty(prop)) {
+                    this[prop] = optionsConfig[prop];
+                }
+            }
+        }
     }
 
     /**
@@ -534,12 +552,28 @@ class JobPostViewOptions extends BaseViewOptions {
 }
 
 /**
+ * Configurable object factory
+ * @param {string} type - string identifying the MDM class name
+ * @return {object|null} An instance of BaseOptions or null if type not found in the config file
+ */
+function generateOptions(type) {
+    if (OPTIONS_CONFIG && OPTIONS_CONFIG.hasOwnProperty(type)) {
+        const config = OPTIONS_CONFIG[type];
+        return new BaseOptions(type, "", "", config);
+    }
+    return null
+}
+
+/**
  * Factory function that returns a an options instance based on the provided string.
- *
  * @param {string} type - Determines which instance to return
  * @return {any} The options instance
  */
 function promptOptionFactory(type) {
+    const optionsObj = generateOptions(type);
+    if(optionsObj)
+        return optionsObj
+
     switch (type) {
         case "journal":
             return new JournalOptions(type);
