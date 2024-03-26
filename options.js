@@ -45,7 +45,7 @@ class BaseOptions {
          * Suppress prompts for these fields
          * - Any default values are applied without confirmation
          * - Explicit value setting is through `default_values` or `getValueForField` at runtime
-         * - Implicit value for values not set explicitely is null
+         * - Implicit value for values not set explicitly is null
          */
         this._ignore_fields = new StringSet([
             "cssClasses", // empty
@@ -559,6 +559,22 @@ class JobPostViewOptions extends BaseViewOptions {
 function generateOptions(type) {
     if (OPTIONS_CONFIG && OPTIONS_CONFIG.hasOwnProperty(type)) {
         const config = OPTIONS_CONFIG[type];
+
+        // Inject Variables into templates literals
+        if(config.default_values){
+            config.default_values.forEach((defaultValueObj, idx) => {
+                const defaultValue = defaultValueObj.value;
+                if (defaultValue.includes('${')) {
+                    // Transform the plain string into a tagged template
+                    const taggedTemplate = parseTemplateString(defaultValue);
+                    defaultValueObj.value = taggedTemplate({
+                        INCLUDE_TEMPLATE_DIR: INCLUDE_TEMPLATE_DIR,
+                        type: type
+                    });
+                }
+            });
+        }
+
         return new BaseOptions(type, "", "", config);
     }
     return null

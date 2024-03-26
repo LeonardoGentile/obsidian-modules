@@ -15,6 +15,7 @@ const timestampUrlBlock = template`\`\`\`timestamp-url\n${"url"}\n\`\`\``;
  *   https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#tagged_templates
  * @param {Array<string>} strings array of strings which may contain ${…} substitutions
  * E.g. `${0}${1}${0}` or `${0} ${"foo"}` or `hey, ${0} ${"foo"} you!`
+ * The substitutions are stripped from the array, so only the rest of the fragments are present
  * @param {Array<any>} keys keys are strings or numbers inside substitutions
  * E.g. `${0}` or `${"foo"}`
  * @return {function(): string}
@@ -43,6 +44,38 @@ function template(strings, ...keys) {
         return result.join("");
     };
 }
+
+/**
+ * Parses a plain string containing placeholders and returns a tagged template function.
+ * @param {string} plainString The plain string containing placeholders.
+ * @returns {Function} A tagged template function that can be used with template literals.
+ */
+function parseTemplateString(plainString) {
+    // Regular expression to match placeholders in the format ${...} or ${'...'}
+    const regex = /\${(['"]?)(.*?)\1}/g;
+    const fragments = [];
+    const keys = [];
+    let match;
+    let lastIndex = 0;
+
+    // Iterate over matches in the plainString
+    while ((match = regex.exec(plainString)) !== null) {
+        // Push the string fragment before the match
+        fragments.push(plainString.substring(lastIndex, match.index));
+        // Push the captured key (without quotes) to keys array
+        keys.push(match[2]);
+        // Update lastIndex to the end of the current match
+        lastIndex = regex.lastIndex;
+    }
+
+    // Push the last string fragment after the last match
+    fragments.push(plainString.substring(lastIndex));
+
+    // Return a tagged template function using the template function
+    return template(fragments, ...keys);
+}
+
+
 
 module.exports = {
     template,
