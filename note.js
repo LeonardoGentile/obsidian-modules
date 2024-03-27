@@ -466,11 +466,17 @@ function filterFieldsById(fieldsToFilter, fieldsToExclude) {
  */
 function titleToAlias(tp, title, dateFmt, type) {
     dateFmt = dateFmt ?? "ddd Do MMM";
-    const fileDate = tp.date.now(dateFmt, 0, title, "YYYY-MM-DD");
-    const titleWODate = title.split(fileDate + "-")[1];
-    const alias = titleWODate ?
-        capitalizeWords(titleWODate.split("-")).join(" ") :
-        fileDate + " " + capitalizeWord(type) + " Note";
+    let alias;
+    try {
+        const fileDate = tp.date.now(dateFmt, 0, title, "YYYY-MM-DD"); // TOFIX
+        const titleWODate = title.split(fileDate + "-")[1];
+        alias = titleWODate ?
+            capitalizeWords(titleWODate.split("-")).join(" ") :
+            fileDate + " " + capitalizeWord(type) + " Note";
+    }
+    catch (e) {
+        alias = "";
+    }
     return alias;
 }
 
