@@ -1,8 +1,8 @@
 const StringSet = self.require("_modules/stringSet.js");
 const constants = self.require("_modules/constants.js");
 const periodic = self.require("_modules/periodic.js");
-const {parseTemplateString} = self.require("_modules/template.js");
-const {INCLUDE_TEMPLATE_DIR} = self.require("_modules/constants.js");
+const { parseTemplateString } = self.require("_modules/template.js");
+const { INCLUDE_TEMPLATE_DIR } = self.require("_modules/constants.js");
 const OPTIONS_CONFIG = self.require("_modules/options_config.js").config;
 
 /**
@@ -56,6 +56,7 @@ class BaseOptions {
         ]);
         this.files_paths = [];
         this.default_values = []; // [{name: field_name, value: default_value}]
+        this.include_default_templates = false;
 
         this.initialize(optionsConfig);
     }
@@ -64,13 +65,19 @@ class BaseOptions {
      * Override and extends the default values from a configuration object initializer
      * @param {object|null} optionsConfig - object initializer
      */
-    initialize(optionsConfig){
-        if(optionsConfig){
+    initialize(optionsConfig) {
+        if (optionsConfig) {
             for (let prop in optionsConfig) {
                 if (this.hasOwnProperty(prop)) {
                     this[prop] = optionsConfig[prop];
                 }
             }
+        }
+        if (optionsConfig.include_default_templates) {
+            this.default_values.push({
+                name: "includeFile",
+                value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`
+            })
         }
     }
 
@@ -90,7 +97,7 @@ class BaseOptions {
      * By assigning a string or array to the field they will be added to the underlying StringSet
      * @param {string|Array} val - A single or multiple fields to ignore
      */
-    set ignore_fields(val){
+    set ignore_fields(val) {
         this._ignore_fields.add(val);
     }
 
@@ -138,12 +145,12 @@ class ChatOptions extends BaseOptions {
             "n",
         ];
         this.default_values = [
-            {name: "temperature", value: constants.temperature},
-            {name: "top_p", value: constants.top_p},
-            {name: "presence_penalty", value: constants.presence_penalty},
-            {name: "frequency_penalty", value: constants.frequency_penalty},
-            {name: "stream", value: constants.stream},
-            {name: "n", value: constants.n},
+            { name: "temperature", value: constants.temperature },
+            { name: "top_p", value: constants.top_p },
+            { name: "presence_penalty", value: constants.presence_penalty },
+            { name: "frequency_penalty", value: constants.frequency_penalty },
+            { name: "stream", value: constants.stream },
+            { name: "n", value: constants.n },
         ];
         this.system_prompts = constants.system_prompts;
         this.prompt_templates = constants.prompt_templates;
@@ -324,7 +331,7 @@ class JobPostViewOptions extends BaseViewOptions {
 
 
 // Inject / Compute values
-function computeConfigValues(config, type){
+function computeConfigValues(config, type) {
 
     // Special Cases for periodic
     if (type == 'periodic') {
@@ -334,7 +341,7 @@ function computeConfigValues(config, type){
     }
 
     // Inject Variables into templates literals
-    if(config.default_values) {
+    if (config.default_values) {
         config.default_values.forEach((defaultValueObj, idx) => {
             const defaultValue = defaultValueObj.value;
             if (defaultValue.includes('${')) {
@@ -368,7 +375,7 @@ function parseConfig(optionsConfig, type) {
     const parentConfig = parseConfig(optionsConfig, currentConfig.extends);
 
     // Merge the configs using the spread/rest operator
-    const mergedConfig = {...parentConfig, ...currentConfig};
+    const mergedConfig = { ...parentConfig, ...currentConfig };
     return mergedConfig;
 }
 
@@ -390,7 +397,7 @@ function generateOptionsConfig(type) {
  */
 function promptOptionFactory(type) {
     const optionsConfig = generateOptionsConfig(type);
-    if(optionsConfig)
+    if (optionsConfig)
         return new BaseOptions(type, "", "", optionsConfig);
 
     switch (type) {

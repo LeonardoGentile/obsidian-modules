@@ -15,36 +15,30 @@ const config = {
 
   // Resources
   "resource": {
-    "files_paths": ["library"],
-    "ignore_fields": ["status"],
-    "default_values": [{
-      "name": "includeFile",
-      "value": "[[${'INCLUDE_TEMPLATE_DIR'}/${'type'}]]"
-    }]
+    files_paths: ["library"],
+    ignore_fields: ["status"],
+    include_default_templates: true,
   },
-  "reference": { "extends": "resource" },
+  "reference": { extends: "resource" },
 
   // Clippings / Articles
   "clipping": {},
   "article": {
-    "extends": "clipping",
-    "files_paths": ["clipping"],
+    extends: "clipping",
+    files_paths: ["clipping"],
   },
 
   // Docs
   "document": {
-    "files_paths": [], // bound to path in MDM
-    "ignore_fields": ["tags"]
+    files_paths: [], // bound to path in MDM
+    ignore_fields: ["tags"]
   },
 
   // Meetings
   "meeting": {
     prompt_for_task: true,
     task_assume_yes: false,
-    default_values: [{
-      name: "includeFile",
-      value: "[[${INCLUDE_TEMPLATE_DIR}/${type}]]"
-    }]
+    include_default_templates: true,
   },
   "interview": { extends: "meeting" },
 
@@ -54,10 +48,7 @@ const config = {
     task_assume_yes: true,
     progress_bar_view: progressView.total,
     ignore_fields: ["tags"],
-    default_values: [{
-      name: "includeFile",
-      value: "[[${INCLUDE_TEMPLATE_DIR}/${type}]]"
-    }]
+    include_default_templates: true,
   },
   "goal": {
     prompt_for_task: true,
@@ -65,10 +56,7 @@ const config = {
     prompt_for_attachment: true,
     progress_bar_view: progressView.total,
     ignore_fields: ["tags"],
-    default_values: [{
-      name: "includeFile",
-      value: "[[${INCLUDE_TEMPLATE_DIR}/${type}]]"
-    }]
+    include_default_templates: true,
   },
 
   // Job Posts
@@ -106,42 +94,45 @@ const config = {
     ignore_fields: ["tags", "series"],
     default_values: [
       { name: "series", value: true },
-      { name: "day_planner", value: "[[${INCLUDE_TEMPLATE_DIR}/day-planner]]" },
+      { name: "day_planner", value: "[[${'INCLUDE_TEMPLATE_DIR'}/day-planner]]" },
       { name: "includeFile", value: "[[${INCLUDE_TEMPLATE_DIR}/${type}]]" },
     ]
   },
-  "daily": {extends: "periodic" },
+  "daily": { extends: "periodic" },
   "periodic-review": {
     extends: "periodic",
     prompt_for_task: false,
-    default_values: [{
-      name: "series",
-      value: true
-    },
-    {
-      name: "includeFile",
-      value: "[[${INCLUDE_TEMPLATE_DIR}/${type}]]"
-    }]
+    default_values: [
+      { name: "series", value: true },
+      { name: "includeFile", value: "[[${INCLUDE_TEMPLATE_DIR}/${type}]]" }
+    ]
   },
-  "weekly": {extends: "periodic-review"},
-  "monthly": {extends: "periodic-review"},
-  "quarterly": {extends: "periodic-review"},
-  "yearly": {extends: "periodic-review"},
+  "weekly": {
+    extends: "periodic-review",
+    include_default_templates: true,
+  },
+  "monthly": {
+    extends: "periodic-review",
+    include_default_templates: true,
+  },
+  "quarterly": {
+    extends: "periodic-review",
+    include_default_templates: true,
+  },
+  "yearly": {
+    extends: "periodic-review",
+    include_default_templates: true,
+  },
 
   // Journal
   "journal": {
-    "period": 0,
-    "files_paths": ["journal"],
-    "ignore_fields": ["tags"],
-    "default_values": [{
-      "name": "includeFile",
-      "value": "[[${'INCLUDE_TEMPLATE_DIR'}/${'type'}]]"
-    }]
+    period: 0,
+    files_paths: ["journal"],
+    ignore_fields: ["tags"],
+    include_default_templates: true,
   }
 }
 
 module.exports = {
   config
 }
-
-"_templates/include/resource"
