@@ -1,8 +1,9 @@
 const StringSet = self.require("_modules/stringSet.js");
 const constants = self.require("_modules/constants.js");
 const periodic = self.require("_modules/periodic.js");
+const {parseTemplateString} = self.require("_modules/template.js");
 const {INCLUDE_TEMPLATE_DIR} = self.require("_modules/constants.js");
-const OPTIONS_CONFIG = {};
+const OPTIONS_CONFIG = self.require("_modules/options_config.js").config;
 
 /**
  * Defines properties for Dataview progress bars.
@@ -116,236 +117,6 @@ class BaseOptions {
     }
 }
 
-/**
- * Sets default options for resource notes.
-*/
-class ResourceOptions extends BaseOptions {
-    /**
-     * Sets the default prompt options
-     * @param {string} type - Type of note the options instance is associated with
-     * @param {string} prefix - (Optional) Preformatted title prefix
-     * @param {string} suffix - (Optional) Preformatted title suffix
-    */
-    constructor(type, prefix, suffix) {
-        super(type, prefix, suffix);
-        this.files_paths = ["library"];
-        this.ignore_fields = ["status"];
-        this.default_values = [
-            {name: "includeFile", value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`},
-        ];
-    }
-}
-
-/**
- * Sets default options for clippings.
-*/
-class ClippingOptions extends BaseOptions {}
-
-/**
- * Sets default options for clipped articles.
-*/
-class ArticleOptions extends ClippingOptions {
-    /**
-     * Sets the default prompt options
-     * @param {string} type - Type of note the options instance is associated with
-    */
-    constructor(type) {
-        super(type);
-        this.files_paths = ["clipping"];
-    }
-}
-
-/**
- * Sets default options for documents.
-*/
-class DocumentOptions extends BaseOptions {
-    /**
-     * Sets the default prompt options
-     * @param {string} type - Type of note the options instance is associated with
-    */
-    constructor(type) {
-        super(type);
-        this.files_paths = []; // bound to path in metadata-menu
-        this.ignore_fields = ["tags"];
-    }
-}
-
-/**
- * Adds properties for managing meeting notes.
-*/
-class MeetingOptions extends BaseOptions {
-    /**
-     * Sets the default prompt options
-     * @param {string} type - Type of note the options instance is associated with
-    */
-    constructor(type) {
-        super(type);
-        this.prompt_for_task = true;
-        this.task_assume_yes = false;
-        this.default_values = [
-            {name: "includeFile", value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`},
-        ];
-    }
-}
-
-/**
- * Sets default options for goal notes.
- * It enables prompting for tasks and attachments when creating a new goal note. It also
- * sets the progress bar view to show total progress for goals.
- */
-class GoalOptions extends BaseOptions {
-    /**
-     * Sets the default prompt options
-     * @param {string} type - Type of note the options instance is associated with
-    */
-    constructor(type) {
-        super(type);
-        this.prompt_for_task = true;
-        this.task_assume_yes = true;
-        this.prompt_for_attachment = true;
-        this.progress_bar_view = progressView.total;
-        this.ignore_fields = ["tags"];
-        this.default_values = [
-            {name: "includeFile", value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`},
-        ];
-    }
-}
-
-/**
- * Sets default options for project notes.
- * It enables prompting for tasks when creating a new project note.
- * It also sets the progress bar view to show total progress for projects.
-*/
-class ProjectOptions extends BaseOptions {
-    /**
-     * Sets the default prompt options
-     * @param {string} type - Type of note the options instance is associated with
-    */
-    constructor(type) {
-        super(type);
-        this.prompt_for_task = true;
-        this.task_assume_yes = true;
-        this.progress_bar_view = progressView.total;
-        this.ignore_fields = ["tags"];
-        this.default_values = [
-            {name: "includeFile", value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`},
-        ];
-    }
-}
-
-/**
- * Adds properties for managing job post notes.
-*/
-class JobPostOptions extends BaseOptions {
-    /**
-     * Sets the default prompt options
-     * @param {string} type - Type of note the options instance is associated with
-    */
-    constructor(type) {
-        super(type);
-        this.prompt_for_task = true;
-        this.ignore_fields = ["directLink", "recruiterLink"];
-        this.files_paths = ["library"];
-    }
-}
-
-/**
- * Adds properties for managing company notes.
-*/
-class CompanyOptions extends BaseOptions {
-    /**
-     * Sets the default prompt options
-     * @param {string} type - Type of note the options instance is associated with
-    */
-    constructor(type) {
-        super(type);
-        this.ignore_fields = ["location", "link"];
-        this.files_paths = ["library"];
-    }
-}
-
-/**
- * Adds properties for managing video notes.
-*/
-class VideoOptions extends BaseOptions {
-    /**
-     * Sets the default prompt options
-     * @param {string} type - Type of note the options instance is associated with
-    */
-    constructor(type) {
-        super(type);
-        this.files_paths = []; // bound to path in metadata-menu
-        this.selector = null;
-        this.url = null;
-    }
-}
-
-/**
- * Adds properties for managing video notes.
-*/
-class YouTubeVideoOptions extends VideoOptions {}
-
-/** Adds properties for managing periodic notes. */
-class JournalOptions extends BaseOptions {
-    /**
-     * The constructor initializes the prompt options for periodic notes.
-     * @param {string} type - Type of note the options instance is associated with
-     * @param {string} prefix - (Optional) Preformatted title prefix, the default is an empty string.
-     * @param {string} suffix - (Optional) Preformatted title suffix, the default is today's date.
-    */
-    constructor(type, prefix, suffix) {
-        super(type, prefix, suffix);
-        this.period = 0;
-        this.files_paths = ["journal"];
-        this.ignore_fields = ["tags"];
-        this.default_values = [
-            {name: "includeFile", value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`},
-        ];
-    }
-}
-
-/** Adds properties for managing periodic notes. */
-class PeriodicOptions extends BaseOptions {
-    /**
-     * The constructor initializes the prompt options for periodic notes.
-     * @param {string} type - Type of note the options instance is associated with
-     * @param {string} prefix - (Optional) Preformatted title prefix, the default is an empty string.
-     * @param {string} suffix - (Optional) Preformatted title suffix, the default is today's date.
-    */
-    constructor(type, prefix, suffix) {
-        prefix = prefix || "";
-        suffix = suffix || periodic.getFormatSettings(type) || moment().format(constants.DATE_FMT);
-        super(type, prefix, suffix);
-        this.date_fmt = periodic.getFormatSettings(type) || this.date_fmt;
-        this.prompt_for_title = false;
-        this.prompt_for_suffix = true;
-        this.prompt_for_task = true;
-        this.prompt_for_alias = false;
-        this.task_assume_yes = true;
-        this.ignore_fields = ["tags", "series"];
-        this.default_values.push(
-            {name: "series", value: true},
-            {name: "day_planner", value: `[[${INCLUDE_TEMPLATE_DIR}/day-planner]]`},
-            {name: "includeFile", value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`},
-        );
-    }
-}
-
-/** Adds properties for managing periodic review notes. */
-class PeriodicReviewOptions extends PeriodicOptions {
-    /**
-     * The constructor initializes the prompt options for periodic review notes.
-     * @param {string} type - Type of note the options instance is associated with
-    */
-    constructor(type) {
-        super(type);
-        this.prompt_for_task = false;
-        this.default_values = [
-            {name: "series", value: true},
-            {name: "includeFile", value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`},
-        ];
-    }
-}
 
 /**
  * Sets default options for chat notes.
@@ -551,33 +322,65 @@ class JobPostViewOptions extends BaseViewOptions {
     }
 }
 
+
+// Inject / Compute values
+function computeConfigValues(config, type){
+
+    // Special Cases for periodic
+    if (type == 'periodic') {
+        config.prefix = "";
+        config.suffix = periodic.getFormatSettings(type) || moment().format(constants.DATE_FMT);
+        config.date_fmt = periodic.getFormatSettings(type) || this.date_fmt;
+    }
+
+    // Inject Variables into templates literals
+    if(config.default_values) {
+        config.default_values.forEach((defaultValueObj, idx) => {
+            const defaultValue = defaultValueObj.value;
+            if (defaultValue.includes('${')) {
+                // Transform the plain string into a tagged template
+                const taggedTemplate = parseTemplateString(defaultValue);
+                defaultValueObj.value = taggedTemplate({
+                    INCLUDE_TEMPLATE_DIR: INCLUDE_TEMPLATE_DIR,
+                    type: type,
+                    constants: constants
+                });
+            }
+        });
+    }
+}
+
+function parseConfig(optionsConfig, type) {
+    // Base case: if the object doesn't exist or if the type
+    // doesn't exist in the object, return an empty object
+    if (!optionsConfig || !optionsConfig[type]) {
+        return {};
+    }
+    const currentConfig = optionsConfig[type];
+    computeConfigValues(currentConfig, type)
+
+    // If the currentConfig doesn't have an 'extends' field, return it directly
+    if (!currentConfig.extends) {
+        return currentConfig;
+    }
+
+    // Recursively call parseConfig with the parent type
+    const parentConfig = parseConfig(optionsConfig, currentConfig.extends);
+
+    // Merge the configs using the spread/rest operator
+    const mergedConfig = {...parentConfig, ...currentConfig};
+    return mergedConfig;
+}
+
 /**
  * Configurable object factory
  * @param {string} type - string identifying the MDM class name
- * @return {object|null} An instance of BaseOptions or null if type not found in the config file
+ * @return {object|null} An object containing the config options for the specific MDM class type
  */
-function generateOptions(type) {
-    if (OPTIONS_CONFIG && OPTIONS_CONFIG.hasOwnProperty(type)) {
-        const config = OPTIONS_CONFIG[type];
-
-        // Inject Variables into templates literals
-        if(config.default_values){
-            config.default_values.forEach((defaultValueObj, idx) => {
-                const defaultValue = defaultValueObj.value;
-                if (defaultValue.includes('${')) {
-                    // Transform the plain string into a tagged template
-                    const taggedTemplate = parseTemplateString(defaultValue);
-                    defaultValueObj.value = taggedTemplate({
-                        INCLUDE_TEMPLATE_DIR: INCLUDE_TEMPLATE_DIR,
-                        type: type
-                    });
-                }
-            });
-        }
-
-        return new BaseOptions(type, "", "", config);
-    }
-    return null
+function generateOptionsConfig(type) {
+    const config = parseConfig(OPTIONS_CONFIG, type);
+    delete config.extends;
+    return config
 }
 
 /**
@@ -586,63 +389,13 @@ function generateOptions(type) {
  * @return {any} The options instance
  */
 function promptOptionFactory(type) {
-    const optionsObj = generateOptions(type);
-    if(optionsObj)
-        return optionsObj
+    const optionsConfig = generateOptionsConfig(type);
+    if(optionsConfig)
+        return new BaseOptions(type, "", "", optionsConfig);
 
     switch (type) {
-        case "journal":
-            return new JournalOptions(type);
-        case "periodic":
-            return new PeriodicOptions(type);
-        case "daily":
-            return new PeriodicOptions(type);
-        case "weekly":
-            return new PeriodicReviewOptions(type);
-        case "monthly":
-            return new PeriodicReviewOptions(type);
-        case "quarterly":
-            return new PeriodicReviewOptions(type);
-        case "yearly":
-            return new PeriodicReviewOptions(type);
-        case "document":
-            return new DocumentOptions(type);
-        case "book":
-            return new BaseOptions(type);
-        case "video":
-            return new VideoOptions(type);
-        case "yt-video":
-            return new YouTubeVideoOptions(type);
         case "chat":
             return new ChatOptions(type);
-        case "goal":
-            return new GoalOptions(type);
-        case "project":
-            return new ProjectOptions(type);
-        case "resource":
-            return new ResourceOptions(type);
-        case "reference":
-            return new ResourceOptions(type);
-        case "company":
-            return new CompanyOptions(type);
-        case "game-company":
-            return new CompanyOptions(type);
-        case "vfx-company":
-            return new CompanyOptions(type);
-        case "job-post":
-            return new JobPostOptions(type);
-        case "games-job":
-            return new JobPostOptions(type);
-        case "vfx-job":
-            return new JobPostOptions(type);
-        case "clipping":
-            return new ClippingOptions(type);
-        case "article":
-            return new ArticleOptions(type);
-        case "meeting":
-            return new MeetingOptions(type);
-        case "interview":
-            return new MeetingOptions(type);
         default:
             // TODO: remove notice
             new Notice(`Unsupported parameter for type: ${type}`);
@@ -703,18 +456,6 @@ module.exports = {
     GameCompanyViewOptions,
     VFXCompanyViewOptions,
     JobPostViewOptions,
-    ResourceOptions,
-    DocumentOptions,
-    MeetingOptions,
-    GoalOptions,
-    ProjectOptions,
-    JobPostOptions,
-    CompanyOptions,
-    VideoOptions,
-    YouTubeVideoOptions,
-    JournalOptions,
-    PeriodicOptions,
-    PeriodicReviewOptions,
     ChatOptions,
     promptOptionFactory,
     viewOptionFactory,

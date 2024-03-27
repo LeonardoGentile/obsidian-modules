@@ -79,6 +79,7 @@ function parseTemplateString(plainString) {
 
 module.exports = {
     template,
+    parseTemplateString,
     jobPostView,
     targetView,
     progressView,
