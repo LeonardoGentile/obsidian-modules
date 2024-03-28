@@ -48,6 +48,7 @@ class BaseOptions {
          * - Explicit value setting is through `default_values` or `getValueForField` at runtime
          * - Implicit value for values not set explicitly is null
          */
+        this.ignore_fields;
         this._ignore_fields = new StringSet([
             "cssClasses", // empty
             "created", // automatically generated at creation time
@@ -57,7 +58,6 @@ class BaseOptions {
         this.files_paths = [];
         this.default_values = []; // [{name: field_name, value: default_value}]
         this.include_default_templates = false;
-
         this.initialize(optionsConfig);
     }
 
@@ -68,7 +68,9 @@ class BaseOptions {
     initialize(optionsConfig) {
         if (optionsConfig) {
             for (let prop in optionsConfig) {
-                if (this.hasOwnProperty(prop)) {
+                // using `in` includes properties from the prototype chain
+                // so also getters and setters
+                if (prop in this) {
                     this[prop] = optionsConfig[prop];
                 }
             }
@@ -76,7 +78,7 @@ class BaseOptions {
         if (optionsConfig.include_default_templates) {
             this.default_values.push({
                 name: "includeFile",
-                value: `[[${INCLUDE_TEMPLATE_DIR}/${type}]]`
+                value: `[[${INCLUDE_TEMPLATE_DIR}/${this.type}]]`
             })
         }
     }
@@ -93,7 +95,7 @@ class BaseOptions {
     }
 
     /**
-     * Setter for the field to hide its implementation details.
+     * Setter for the ignore_fields to hide its implementation details.
      * By assigning a string or array to the field they will be added to the underlying StringSet
      * @param {string|Array} val - A single or multiple fields to ignore
      */
@@ -124,6 +126,22 @@ class BaseOptions {
     }
 }
 
+/** Adds properties for managing periodic notes. */
+class PeriodicOptions extends BaseOptions {
+    /**
+     * The constructor initializes the prompt options for periodic notes.
+     * @param {string} type - Type of note the options instance is associated with
+     * @param {string} prefix - (Optional) Preformatted title prefix, the default is an empty string.
+     * @param {string} suffix - (Optional) Preformatted title suffix, the default is today's date.
+     * @param {object} optionsConfig - (Optional) Object initializer
+    */
+    constructor(type, prefix, suffix, optionsConfig) {
+        prefix = prefix || "";
+        suffix = suffix || periodic.getFormatSettings(type) || moment().format(constants.DATE_FMT);
+        super(type, prefix, suffix, optionsConfig);
+        this.date_fmt = periodic.getFormatSettings(type) || this.date_fmt;
+    }
+}
 
 /**
  * Sets default options for chat notes.
@@ -163,42 +181,46 @@ class BaseViewOptions {
      * @param {string} type - Type of note the options instance is associated with
      * @param {string} title - Title of note
     */
-    constructor(type, title) {
+    constructor(type, title, config) {
         this.type = type;
         this.title = title;
         this.period = -1;  // -1: no period, 0: 1 day, 7: 1 week, etc...
         this.linked = false;
-        this.tags = new StringSet([]);
+        this._tags = new StringSet([]);
+        this.initialize(config)
+    }
+
+    /**
+     * Override and extends the default values from a configuration object initializer
+     * @param {object|null} config - object initializer
+     */
+    initialize(config) {
+        if (config) {
+            for (let prop in config) {
+                if (this.hasOwnProperty(prop)) {
+                    this[prop] = config[prop];
+                }
+            }
+        }
+    }
+
+    /**
+     * Setter for the field tags to hide its implementation details.
+     * By assigning a string or array to the field they will be added to the underlying StringSet
+     * @param {string|Array} val - A single or multiple fields to ignore
+     */
+    set tags(val) {
+        this._tags.add(val);
+    }
+
+    /**
+     * Get the underlying values stored in the StringSet
+     */
+    get tags() {
+        return this._tags;
     }
 }
 
-/** Sets default view options for project notes. */
-class ProjectViewOptions extends BaseViewOptions {
-    /** Initializes project view options with default tags.
-     * @param {string} type - Type of note the options instance is associated with
-     * @param {string} title - Title of note
-    */
-    constructor(type, title) {
-        super(type, title);
-        this.linked = true;
-        this.tags.add([
-            "journal", "reference", "resource", "yt", "chat",
-        ]);
-    }
-}
-
-/** Sets default view options for journals. */
-class JournalViewOptions extends BaseViewOptions {
-    /** Initializes journal view options with default tags.
-     * @param {string} type - Type of note the options instance is associated with
-     * @param {string} title - Title of note
-    */
-    constructor(type, title) {
-        super(type, title);
-        this.linked = true;
-        this.tags.add(["reference", "resource", "chat", "yt"]);
-    }
-}
 
 /** Sets default view options for periodic notes. */
 class PeriodicViewOptions extends BaseViewOptions {
@@ -206,165 +228,96 @@ class PeriodicViewOptions extends BaseViewOptions {
      * @param {string} type - Type of note the options instance is associated with
      * @param {string} title - Title of note
     */
-    constructor(type, title) {
-        super(type, title);
-        this.period = 0; // every day
-        this.tags.add([
-            "reference", "resource", "chat", "yt", "goal", "project",
-        ]);
+    constructor(type, title, config) {
+        super(type, title, config);
+        const periods = {
+            "daily": () => 0,
+            "weekly": () => 7,
+            "monthly": () => moment(title).daysInMonth(),
+            "quarterly": () => 90,
+            "yearly": () => moment(title).isLeapYear() ? 366 : 365,
+        }
+        this.period = periods.hasOwnProperty(type) ? periods[type]() : -1
     }
 }
 
-/** Sets default view options for daily notes. */
-class DailyViewOptions extends PeriodicViewOptions {
-    /** Initializes daily view options with default tags.
-     * @param {string} type - Type of note the options instance is associated with
-     * @param {string} title - Title of note
-    */
-    constructor(type, title) {
-        super(type, title);
-        this.tags.add("journal");
+
+/**
+ * Parses a key to extract the field name and operation.
+ * @param {string} key - The key to parse.
+ * @returns {Object} An object containing the full name, field name, and operation if the key matches the expected pattern,
+ *                   or an object with field name and operation set to null if the key does not match the pattern.
+ */
+function _parseFieldName(key) {
+    // Regular expression to match keys with the pattern _field_name_add
+    const regex = /^_([^_]+)_(add|replace|delete)$/;
+
+    // Check if the key matches the expected pattern
+    const match = regex.exec(key);
+    if (match) {
+        // Extract the field name and operation
+        const [, fieldName, operation] = match;
+        return { fullName: key, fieldName, operation };
+    } else {
+        // Key doesn't match the expected pattern, return an object with null values
+        return { fullName: key, fieldName: null, operation: null };
     }
 }
 
-/** Sets default view options for weekly notes. */
-class WeeklyViewOptions extends BaseViewOptions {
-    /** Initializes weekly view options with default tags.
-     * @param {string} type - Type of note the options instance is associated with
-     * @param {string} title - Title of note
-    */
-    constructor(type, title) {
-        super(type, title);
-        this.period = 7;
-        this.tags.add("daily");
-    }
+
+function _handle_fields_add(mergedConfig, parentConfig, currentConfig) {
+    Object.keys(currentConfig).forEach((key) => {
+        const { fullName, fieldName, operation } = _parseFieldName(key)
+        if(operation == 'add') {
+            const parentField = parentConfig[fieldName] || [];
+            const currentField = currentConfig[fullName];
+            // push all items from this current object to the parent array
+            parentField.push(...currentField);
+            mergedConfig[fullName] = parentField;
+        }
+    });
 }
 
-/** Sets default view options for monthly notes. */
-class MonthlyViewOptions extends BaseViewOptions {
-    /** Initializes monthly view options with default tags.
-     * @param {string} type - Type of note the options instance is associated with
-     * @param {string} title - Title of note
-    */
-    constructor(type, title) {
-        super(type, title);
-        this.period = moment(title).daysInMonth();
-        this.tags.add("weekly");
-    }
-}
-
-/** Sets default view options for quarterly notes. */
-class QuarterlyViewOptions extends BaseViewOptions {
-    /** Initializes quarterly view options with default tags.
-     * @param {string} type - Type of note the options instance is associated with
-     * @param {string} title - Title of note
-    */
-    constructor(type, title) {
-        super(type, title);
-        this.period = 90;
-        this.tags.add("monthly");
-    }
-}
-
-/** Sets default view options for yearly notes. */
-class YearlyViewOptions extends BaseViewOptions {
-    /** Initializes yearly view options with default tags.
-     * @param {string} type - Type of note the options instance is associated with
-     * @param {string} title - Title of note
-    */
-    constructor(type, title) {
-        super(type, title);
-        this.period = moment(title).isLeapYear() ? 366 : 365;
-        this.tags.add("quarterly");
-    }
-}
-
-/** Sets default view options for company notes. */
-class CompanyViewOptions extends BaseViewOptions {
-    /** Initializes job post view options with default tags.
-     * @param {string} type - Type of note the options instance is associated with
-     * @param {string} title - Title of note
-    */
-    constructor(type, title) {
-        super(type, title);
-        this.linked = true;
-        this.tags.add(["job-post", "meeting", "reference", "resource"]);
-    }
-}
-
-/** Sets default view options for Game company notes. */
-class GameCompanyViewOptions extends CompanyViewOptions {
-    /** Initializes job post view options with default tags.
-     * @param {string} type - Type of note the options instance is associated with
-     * @param {string} title - Title of note
-    */
-    constructor(type, title) {
-        super(type, title);
-        this.tags.replace("job-post", "games-job");
-    }
-}
-
-/** Sets default view options for VFX company notes. */
-class VFXCompanyViewOptions extends CompanyViewOptions {
-    /** Initializes job post view options with default tags.
-     * @param {string} type - Type of note the options instance is associated with
-     * @param {string} title - Title of note
-    */
-    constructor(type, title) {
-        super(type, title);
-        this.tags.replace("job-post", "vfx-job");
-    }
-}
-
-/** Sets default view options for job post notes. */
-class JobPostViewOptions extends BaseViewOptions {
-    /** Initializes job post view options with default tags.
-     * @param {string} type - Type of note the options instance is associated with
-     * @param {string} title - Title of note
-    */
-    constructor(type, title) {
-        super(type, title);
-        this.linked = true;
-        this.tags.add(["journal", "meeting", "reference", "resource"]);
-    }
+function _handle_fields_replace(currentConfig) {
+    Object.entries(currentConfig).forEach(([oldValue, newValue]) => {
+        if(typeof key === 'string' && typeof value === 'string'){
+            const { fullName, fieldName, operation } = _parseFieldName(oldValue)
+            if(operation == 'replace') {
+                currentConfig[fieldName].replace(oldValue, newValue);
+            }
+        }
+    });
 }
 
 
 // Inject / Compute values
-function computeConfigValues(config, type) {
-
-    // Special Cases for periodic
-    if (type == 'periodic') {
-        config.prefix = "";
-        config.suffix = periodic.getFormatSettings(type) || moment().format(constants.DATE_FMT);
-        config.date_fmt = periodic.getFormatSettings(type) || this.date_fmt;
-    }
-
+function _computeTemplates(currentConfig, type) {
     // Inject Variables into templates literals
-    if (config.default_values) {
-        config.default_values.forEach((defaultValueObj, idx) => {
-            const defaultValue = defaultValueObj.value;
+    if (currentConfig.default_values) {
+        currentConfig.default_values.forEach((item, idx) => {
+            const defaultValue = item.value;
+            // Transform the plain string into a tagged template
             if (defaultValue.includes('${')) {
-                // Transform the plain string into a tagged template
                 const taggedTemplate = parseTemplateString(defaultValue);
-                defaultValueObj.value = taggedTemplate({
+                item.value = taggedTemplate({
                     INCLUDE_TEMPLATE_DIR: INCLUDE_TEMPLATE_DIR,
                     type: type,
-                    constants: constants
+                    constants: constants // TODO: chat
                 });
             }
         });
     }
 }
 
-function parseConfig(optionsConfig, type) {
+
+function parseConfig(configOject, type) {
     // Base case: if the object doesn't exist or if the type
     // doesn't exist in the object, return an empty object
-    if (!optionsConfig || !optionsConfig[type]) {
+    if (!configOject || !configOject[type]) {
         return {};
     }
-    const currentConfig = optionsConfig[type];
-    computeConfigValues(currentConfig, type)
+    const currentConfig = configOject[type];
+    _computeTemplates(currentConfig, type)
 
     // If the currentConfig doesn't have an 'extends' field, return it directly
     if (!currentConfig.extends) {
@@ -372,10 +325,17 @@ function parseConfig(optionsConfig, type) {
     }
 
     // Recursively call parseConfig with the parent type
-    const parentConfig = parseConfig(optionsConfig, currentConfig.extends);
+    const parentConfig = parseConfig(configOject, currentConfig.extends);
 
     // Merge the configs using the spread/rest operator
     const mergedConfig = { ...parentConfig, ...currentConfig };
+    _handle_fields_add(mergedConfig, parentConfig, currentConfig);
+
+    // WARNING: mergedConfig won't have the correct views
+    const mergedViews = {...(parentConfig.view || {}), ...(currentConfig.view || {}) };
+    _handle_fields_add(mergedViews, parentView, currentView)
+    mergedConfig.view = mergedViews;
+
     return mergedConfig;
 }
 
@@ -384,9 +344,17 @@ function parseConfig(optionsConfig, type) {
  * @param {string} type - string identifying the MDM class name
  * @return {object|null} An object containing the config options for the specific MDM class type
  */
-function generateOptionsConfig(type) {
+function generateConfig(type) {
     const config = parseConfig(OPTIONS_CONFIG, type);
+    _handle_fields_replace(config);
+    if(config.view) {
+        _handle_fields_replace(config.view);
+    }
+
     delete config.extends;
+    // TODO remove special fields
+    // delete config.view._tags_replace;
+    // delete config.view._tags_add;
     return config
 }
 
@@ -396,17 +364,19 @@ function generateOptionsConfig(type) {
  * @return {any} The options instance
  */
 function promptOptionFactory(type) {
-    const optionsConfig = generateOptionsConfig(type);
-    if (optionsConfig)
-        return new BaseOptions(type, "", "", optionsConfig);
-
-    switch (type) {
+    const config = generateConfig(type);
+    let OptionsClass;
+    const _type = config._type || type;
+    switch (_type) {
+        case "periodic":
+            OptionsClass = PeriodicOptions;
         case "chat":
-            return new ChatOptions(type);
+            OptionsClass = ChatOptions;
         default:
             // TODO: remove notice
             new Notice(`Unsupported parameter for type: ${type}`);
-            return new BaseOptions(type);
+            OptionsClass = BaseOptions;
+        return new OptionsClass(type, "", "", config);
     }
 }
 
@@ -418,51 +388,21 @@ function promptOptionFactory(type) {
  * @return {any} The options instance
  */
 function viewOptionFactory(type, title) {
-    switch (type) {
-        case "journal":
-            return new JournalViewOptions(type, title);
-        case "daily":
-            return new DailyViewOptions(type, title);
-        case "weekly":
-            return new WeeklyViewOptions(type, title);
-        case "monthly":
-            return new MonthlyViewOptions(type, title);
-        case "quarterly":
-            return new QuarterlyViewOptions(type, title);
-        case "yearly":
-            return new YearlyViewOptions(type, title);
-        case "company":
-            return new CompanyViewOptions(type, title);
-        case "game-company":
-            return new GameCompanyViewOptions(type, title);
-        case "vfx-company":
-            return new VFXCompanyViewOptions(type, title);
-        case "job-post":
-            return new JobPostViewOptions(type, title);
-        case "games-job":
-            return new JobPostViewOptions(type, title);
-        case "vfx-job":
-            return new JobPostViewOptions(type, title);
-        case "project":
-            return new ProjectViewOptions(type, title);
+    const config = generateConfig(type);
+    const viewConfig = config.view || {};
+
+    let ViewClass;
+    switch (config._type) {
+        case "periodic":
+            ViewClass = PeriodicOptions
         default:
-            return new BaseViewOptions(type, title);
+            ViewClass = BaseViewOptions
+
+        return new ViewClass(type, title, config);
     }
 }
 
 module.exports = {
-    ProjectViewOptions,
-    PeriodicViewOptions,
-    JournalViewOptions,
-    DailyViewOptions,
-    WeeklyViewOptions,
-    MonthlyViewOptions,
-    QuarterlyViewOptions,
-    YearlyViewOptions,
-    CompanyViewOptions,
-    GameCompanyViewOptions,
-    VFXCompanyViewOptions,
-    JobPostViewOptions,
     ChatOptions,
     promptOptionFactory,
     viewOptionFactory,
