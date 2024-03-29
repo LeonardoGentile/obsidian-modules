@@ -14,7 +14,7 @@ const progressView = {
 
 // - Whenever an array is set it replace any value set in the parent
 // - If there is a field like _fieldName_add then it means the values from
-//   this array must extends the values from the parent array
+//   this array must _extends the values from the parent array
 
 const config = {
   // Basic
@@ -25,11 +25,11 @@ const config = {
     ignore_fields: ["status"],
     include_default_templates: true,
   },
-  "reference": { extends: "resource" },
+  "reference": { _extends: "resource" },
   // Clippings / Articles
   "clipping": {},
   "article": {
-    extends: "clipping",
+    _extends: "clipping",
     files_paths: ["clipping"],
   },
   // Docs
@@ -43,14 +43,14 @@ const config = {
     selector: null,
     url: null
   },
-  "yt-video": { extends: "video" },
+  "yt-video": { _extends: "video" },
   // Meetings
   "meeting": {
     prompt_for_task: true,
     task_assume_yes: false,
     include_default_templates: true,
   },
-  "interview": { extends: "meeting" },
+  "interview": { _extends: "meeting" },
   // Projects
   "project": {
     prompt_for_task: true,
@@ -86,7 +86,6 @@ const config = {
   },
   // Periodic
   "periodic": {
-    _type: "periodic", // flag to compute period at runtime
     prompt_for_title: false,
     prompt_for_suffix: true,
     prompt_for_task: true,
@@ -107,25 +106,25 @@ const config = {
     }
   },
   "daily": {
-    extends: "periodic",
+    _extends: "periodic",
     view: {
       // period: 0, // every day
-      _tags_add: ["journal"] // TODO: add to the parent, don't override
+      _tags_add: ["journal"] // It's added to the parent, not overridden
     }
   },
   "periodic-review": {
-    extends: "periodic",
+    _extends: "periodic",
     prompt_for_task: false,
     default_values: [
       { name: "series", value: true },
-      {
-        name: "includeFile",
-        value: "[[${INCLUDE_TEMPLATE_DIR}/${type}]]"
-      }
+      // {
+      //   name: "includeFile",
+      //   value: "[[${INCLUDE_TEMPLATE_DIR}/${type}]]"
+      // }
     ]
   },
   "weekly": {
-    extends: "periodic-review",
+    _extends: "periodic-review",
     include_default_templates: true,
     view: {
       // period: 7,
@@ -133,14 +132,14 @@ const config = {
     }
   },
   "monthly": {
-    extends: "periodic-review",
+    _extends: "periodic-review",
     include_default_templates: true,
     view: {
       tags: ["weekly"]
     }
   },
   "quarterly": {
-    extends: "periodic-review",
+    _extends: "periodic-review",
     include_default_templates: true,
     view: {
       // period: 90,
@@ -148,7 +147,7 @@ const config = {
     }
   },
   "yearly": {
-    extends: "periodic-review",
+    _extends: "periodic-review",
     include_default_templates: true,
     view: {
       tags: ["quarterly"]
@@ -164,13 +163,13 @@ const config = {
     },
   },
   "game-company": {
-    extends: "company",
+    _extends: "company",
     view: {
       _tags_replace: { "job-post": "games-job" }
     }
   },
   "vfx-company": {
-    extends: "company",
+    _extends: "company",
     view: {
       _tags_replace: {
         "job-post": "vfx-job"
@@ -187,10 +186,10 @@ const config = {
       tags: ["journal", "meeting", "reference", "resource"]
     }
   },
-  "games-job": { extends: "job-post" },
-  "vfx-job": { extends: "job-post" },
+  "games-job": { _extends: "job-post" },
+  "vfx-job": { _extends: "job-post" },
   "chat": {
-    _type: "chat"
+    // _type: "chat"
   }
 }
 

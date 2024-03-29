@@ -96,7 +96,7 @@ async function newNoteData(tp) {
     }
 
     // Options for view templates, e.g. overview and job-posts
-    const viewTemplateOptions = options.viewOptionFactory(type, title);
+    const viewTemplateOptions = promptOptions.getViewOptions(title)
 
     // Map field name with values for merging back into a master list
     const inputFields = filterFieldsByNameAndType(fileClass.fields, ["title"], "input");

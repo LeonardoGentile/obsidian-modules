@@ -24,14 +24,23 @@ class BaseOptions {
      * @param {string} type - Type of note the options instance is associated with
      * @param {string} prefix - (Optional) Preformatted title prefix, the default is today's date.
      * @param {string} suffix - (Optional) Preformatted title suffix, the default is the note type as string.
-     * @param {object} optionsConfig - (Optional) Object initializer
+     * @param {object} config - (Optional) Object initializer
      */
-    constructor(type, prefix, suffix, optionsConfig) {
+    constructor(type, prefix, suffix, config) {
+        // Initialize default properties
+        this._initDefaultOptions(type, prefix, suffix);
+        this._initSetOptions(config);
+        this._initComputedOptions()
+    }
+
+    // Initialize default properties
+    _initDefaultOptions(type, prefix, suffix) {
         this.type = type;
         this.date_fmt = constants.DATE_FMT;
         this.title_sep = constants.TITLE_SEP;
         this.title_prefix = prefix != undefined ? prefix : moment().format(this.date_fmt);
         this.title_suffix = suffix != undefined ? suffix : this.type;
+        // Prompt Options
         this.prompt_for_title = true; // If true, prompt for title before file creation
         this.prompt_for_suffix = false; // If true, prompt for title suffix before file creation
         this.prompt_for_prefix = false; // If true, prompt for title prefix before file creation
@@ -41,41 +50,51 @@ class BaseOptions {
         this.prompt_for_attachment = false;
         this.prompt_for_project = false;
         this.prompt_for_goal = false;
+
         this.progress_bar_view = progressView.page;
+        // Array-like fields
+        this.files_paths = [];
+        this.include_default_templates = false; // TODO
+        this.default_values = []; // [{name: field_name, value: default_value}]
         /**
          * Suppress prompts for these fields
          * - Any default values are applied without confirmation
          * - Explicit value setting is through `default_values` or `getValueForField` at runtime
          * - Implicit value for values not set explicitly is null
          */
-        this.ignore_fields;
         this._ignore_fields = new StringSet([
             "cssClasses", // empty
             "created", // automatically generated at creation time
             "modified", // automatically generated at creation time
             "bar", // only created if tasks are enabled
         ]);
-        this.files_paths = [];
-        this.default_values = []; // [{name: field_name, value: default_value}]
-        this.include_default_templates = false;
-        this.initialize(optionsConfig);
+        // View Class
+        this._viewClass = null;
     }
 
     /**
-     * Override and extends the default values from a configuration object initializer
-     * @param {object|null} optionsConfig - object initializer
+     * Set options from the config object (if properties defined in class)
+     * @param {object|null} config - object initializer
      */
-    initialize(optionsConfig) {
-        if (optionsConfig) {
-            for (let prop in optionsConfig) {
+    _initSetOptions(config) {
+        if (config) {
+            for (let prop in config) {
                 // using `in` includes properties from the prototype chain
                 // so also getters and setters
                 if (prop in this) {
-                    this[prop] = optionsConfig[prop];
+                    this[prop] = config[prop];
                 }
             }
         }
-        if (optionsConfig.include_default_templates) {
+        this._viewConfig = config.view || {}
+    }
+    /**
+     * Initializes computed values
+     * If include_default_templates is true, it adds a default value for including a template file.
+     * The template file path is constructed based on the type of the options object.
+     */
+    _initComputedOptions() {
+        if (this.include_default_templates) {
             this.default_values.push({
                 name: "includeFile",
                 value: `[[${INCLUDE_TEMPLATE_DIR}/${this.type}]]`
@@ -124,6 +143,14 @@ class BaseOptions {
             null
         );
     }
+
+    setViewClass(classRef) {
+        this._viewClass = classRef
+    }
+
+    getViewOptions(title){
+        return new this._viewClass(this.type, title, this._viewConfig)
+    }
 }
 
 /** Adds properties for managing periodic notes. */
@@ -133,12 +160,12 @@ class PeriodicOptions extends BaseOptions {
      * @param {string} type - Type of note the options instance is associated with
      * @param {string} prefix - (Optional) Preformatted title prefix, the default is an empty string.
      * @param {string} suffix - (Optional) Preformatted title suffix, the default is today's date.
-     * @param {object} optionsConfig - (Optional) Object initializer
+     * @param {object} config - (Optional) Object initializer
     */
-    constructor(type, prefix, suffix, optionsConfig) {
+    constructor(type, prefix, suffix, config) {
         prefix = prefix || "";
         suffix = suffix || periodic.getFormatSettings(type) || moment().format(constants.DATE_FMT);
-        super(type, prefix, suffix, optionsConfig);
+        super(type, prefix, suffix, config);
         this.date_fmt = periodic.getFormatSettings(type) || this.date_fmt;
     }
 }
@@ -182,22 +209,29 @@ class BaseViewOptions {
      * @param {string} title - Title of note
     */
     constructor(type, title, config) {
+        this._initDefaultOptions(type, title);
+        this._initSetOptions(config);
+    }
+
+    // Initialize default properties
+    _initDefaultOptions(type, title) {
         this.type = type;
         this.title = title;
         this.period = -1;  // -1: no period, 0: 1 day, 7: 1 week, etc...
         this.linked = false;
         this._tags = new StringSet([]);
-        this.initialize(config)
     }
 
     /**
      * Override and extends the default values from a configuration object initializer
      * @param {object|null} config - object initializer
      */
-    initialize(config) {
+    _initSetOptions(config) {
         if (config) {
             for (let prop in config) {
-                if (this.hasOwnProperty(prop)) {
+                // using `in` includes properties from the prototype chain
+                // so also getters and setters
+                if (prop in this) {
                     this[prop] = config[prop];
                 }
             }
@@ -205,8 +239,7 @@ class BaseViewOptions {
     }
 
     /**
-     * Setter for the field tags to hide its implementation details.
-     * By assigning a string or array to the field they will be added to the underlying StringSet
+     * By setting a string or array to the field they will be added to the underlying StringSet
      * @param {string|Array} val - A single or multiple fields to ignore
      */
     set tags(val) {
@@ -230,6 +263,10 @@ class PeriodicViewOptions extends BaseViewOptions {
     */
     constructor(type, title, config) {
         super(type, title, config);
+        this._setPeriod()
+    }
+
+    _setPeriod() {
         const periods = {
             "daily": () => 0,
             "weekly": () => 7,
@@ -237,7 +274,7 @@ class PeriodicViewOptions extends BaseViewOptions {
             "quarterly": () => 90,
             "yearly": () => moment(title).isLeapYear() ? 366 : 365,
         }
-        this.period = periods.hasOwnProperty(type) ? periods[type]() : -1
+        this.period = periods.hasOwnProperty(this.type) ? periods[this.type]() : -1
     }
 }
 
@@ -264,94 +301,125 @@ function _parseFieldName(key) {
     }
 }
 
-
-function _handle_fields_add(mergedConfig, parentConfig, currentConfig) {
+/**
+ * Handles the addition of fields from the current configuration object to the merged configuration object.
+ * @param {Object} mergedConfig - The merged configuration object.
+ * @param {Object} parentConfig - The parent configuration object.
+ * @param {Object} currentConfig - The current configuration object.
+ */
+function _handleFields_add(mergedConfig, parentConfig, currentConfig) {
     Object.keys(currentConfig).forEach((key) => {
-        const { fullName, fieldName, operation } = _parseFieldName(key)
-        if(operation == 'add') {
+        const { fullName, fieldName, operation } = _parseFieldName(key);
+        if (operation === 'add') {
             const parentField = parentConfig[fieldName] || [];
             const currentField = currentConfig[fullName];
-            // push all items from this current object to the parent array
+            // Push all items from the current object to the parent array
             parentField.push(...currentField);
-            mergedConfig[fullName] = parentField;
         }
     });
 }
 
-function _handle_fields_replace(currentConfig) {
-    Object.entries(currentConfig).forEach(([oldValue, newValue]) => {
-        if(typeof key === 'string' && typeof value === 'string'){
-            const { fullName, fieldName, operation } = _parseFieldName(oldValue)
-            if(operation == 'replace') {
-                currentConfig[fieldName].replace(oldValue, newValue);
+/**
+ * Handles the replacement of fields within the provided configuration object.
+ * @param {Object} configObj - The configuration object to process.
+ */
+function _handleFields_replace(configObj) {
+    Object.entries(configObj).forEach(([key, value]) => {
+        if (typeof key === 'string' && typeof value === 'string') {
+            const { fullName, fieldName, operation } = _parseFieldName(key);
+            if (operation === 'replace') {
+                configObj[fieldName].replace(fullName, value);
             }
         }
     });
+    if (configObj.view) {
+        _handleFields_replace(configObj.view);
+    }
 }
 
-
-// Inject / Compute values
-function _computeTemplates(currentConfig, type) {
-    // Inject Variables into templates literals
+/**
+ * Injects and compiles values into template literals within the provided configuration object.
+ * @param {Object} currentConfig - The current configuration object to process.
+ * @param {string} type - The type of configuration being processed.
+ */
+function _compileTemplates(currentConfig, type) {
+    // Inject Variables into template literals
     if (currentConfig.default_values) {
-        currentConfig.default_values.forEach((item, idx) => {
-            const defaultValue = item.value;
-            // Transform the plain string into a tagged template
-            if (defaultValue.includes('${')) {
-                const taggedTemplate = parseTemplateString(defaultValue);
-                item.value = taggedTemplate({
-                    INCLUDE_TEMPLATE_DIR: INCLUDE_TEMPLATE_DIR,
-                    type: type,
-                    constants: constants // TODO: chat
-                });
+        currentConfig.default_values.forEach(defaultObjItem => {
+            const { value } = defaultObjItem;
+            if (typeof value === 'string' && value.includes('${')) {
+                // Transform the plain string into a tagged template
+                const compiledTemplate = parseTemplateString(value)({ INCLUDE_TEMPLATE_DIR, type, constants });
+                // Replace the object property with the compiled string
+                defaultObjItem.value = compiledTemplate;
             }
         });
     }
 }
 
+/**
+ * Merges two configuration objects, prioritizing the fields from the
+ * current configuration over the parent configuration.
+ * This can be used for both prompt and view options.
+ * @param {Object} parentConfig - The parent configuration object.
+ * @param {Object} currentConfig - The current configuration object.
+ * @returns {Object} The merged configuration object.
+ */
+function _mergeObjects(parentConfig, currentConfig) {
+    if(!parentConfig) parentConfig = {};
+    if(!currentConfig) currentConfig = {};
+    // Merge the configs using the spread/rest operator
+    const mergedConfig = { ...parentConfig, ...currentConfig };
+    _handleFields_add(mergedConfig, parentConfig, currentConfig);
+    return mergedConfig
+}
 
-function parseConfig(configOject, type) {
+/**
+ * Parses the configuration object for a specific type, handling inheritance
+ * and merging of configurations using recursion
+ * @param {Object} allConfig - The object containing all configurations for different types.
+ * @param {string} type - The type of configuration to parse.
+ * @returns {Object} The parsed configuration object for the specified type.
+ */
+function parseConfig(allConfig, type) {
     // Base case: if the object doesn't exist or if the type
     // doesn't exist in the object, return an empty object
-    if (!configOject || !configOject[type]) {
-        return {};
+    let currentConfig;
+    if (!allConfig || !allConfig[type]) {
+        currentConfig = {}
     }
-    const currentConfig = configOject[type];
-    _computeTemplates(currentConfig, type)
+    currentConfig = allConfig[type];
+    _compileTemplates(currentConfig, type)
 
-    // If the currentConfig doesn't have an 'extends' field, return it directly
-    if (!currentConfig.extends) {
+    // If the currentConfig doesn't have an '_extends' field, return it directly
+    if (!currentConfig._extends) {
         return currentConfig;
     }
 
     // Recursively call parseConfig with the parent type
-    const parentConfig = parseConfig(configOject, currentConfig.extends);
+    const parentConfig = parseConfig(allConfig, currentConfig._extends);
 
     // Merge the configs using the spread/rest operator
-    const mergedConfig = { ...parentConfig, ...currentConfig };
-    _handle_fields_add(mergedConfig, parentConfig, currentConfig);
-
+    const mergedConfig = _mergeObjects(parentConfig, currentConfig);
+    // Update the _extends property to point to the top-most object
+    mergedConfig._extends = parentConfig._extends || currentConfig._extends;
     // WARNING: mergedConfig won't have the correct views
-    const mergedViews = {...(parentConfig.view || {}), ...(currentConfig.view || {}) };
-    _handle_fields_add(mergedViews, parentView, currentView)
+    const mergedViews = _mergeObjects(parentConfig.view, currentConfig.view);
     mergedConfig.view = mergedViews;
-
     return mergedConfig;
 }
 
 /**
  * Configurable object factory
  * @param {string} type - string identifying the MDM class name
- * @return {object|null} An object containing the config options for the specific MDM class type
+ * @return {object|null} An object containing the config options
+ *                       for the specified (MDM class) type
  */
 function generateConfig(type) {
     const config = parseConfig(OPTIONS_CONFIG, type);
-    _handle_fields_replace(config);
-    if(config.view) {
-        _handle_fields_replace(config.view);
-    }
+    config._type = type;
+    _handleFields_replace(config);
 
-    delete config.extends;
     // TODO remove special fields
     // delete config.view._tags_replace;
     // delete config.view._tags_add;
@@ -365,19 +433,35 @@ function generateConfig(type) {
  */
 function promptOptionFactory(type) {
     const config = generateConfig(type);
-    let OptionsClass;
-    const _type = config._type || type;
+    if (!config) {
+        new Notice(`Invalid config type: ${type}`);
+    }
+
+    console.log(JSON.stringify(config, null, 2));
+
+    // config._extends identifies the topmost type in the inheritance
+    // as at this point all children have been recursively merged from bottom to top
+    const _type = config._extends || config._type
+    let OptionsClass = BaseOptions
+    let ViewClass = BaseViewOptions;
     switch (_type) {
         case "periodic":
             OptionsClass = PeriodicOptions;
+            ViewClass = PeriodicViewOptions;
+            break;
         case "chat":
             OptionsClass = ChatOptions;
+            break;
         default:
             // TODO: remove notice
             new Notice(`Unsupported parameter for type: ${type}`);
-            OptionsClass = BaseOptions;
-        return new OptionsClass(type, "", "", config);
+            // OptionsClass = BaseOptions;
+
     }
+    // config.viewClass = ViewClass;
+    const promptOptions = new OptionsClass(type, "", "", config);
+    promptOptions.setViewClass(ViewClass);
+    return promptOptions
 }
 
 /**
@@ -394,11 +478,12 @@ function viewOptionFactory(type, title) {
     let ViewClass;
     switch (config._type) {
         case "periodic":
-            ViewClass = PeriodicOptions
+            ViewClass = PeriodicViewOptions
+
         default:
             ViewClass = BaseViewOptions
 
-        return new ViewClass(type, title, config);
+            return new ViewClass(type, title, config);
     }
 }
 
