@@ -1,4 +1,4 @@
-const metadata = self.require("_modules/metadata.js");
+const metadata = self.require("_modules/metadata/metadata.js");
 
 const PREFIXED_REGEX = /^(?<prefix>[0-9]+-[0-9]+-[0-9]+)(?<suffix>.*)/;
 

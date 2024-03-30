@@ -39,11 +39,16 @@ const config = {
   },
   // Video
   "video": {
-    files_paths: [], // bound to path in metadata-men
+    files_paths: [], // bound to path in metadata-menu
     selector: null,
-    url: null
+    url: null,
   },
-  "yt-video": { _extends: "video" },
+  "yt-video": {
+    _extends: "video",
+    title_prefix: "YT",
+    prompt_for_suffix: false,
+    title_suffix_stringify: false
+  },
   // Meetings
   "meeting": {
     prompt_for_task: true,
@@ -92,7 +97,7 @@ const config = {
     prompt_for_alias: false,
     task_assume_yes: true,
     ignore_fields: ["tags", "series"],
-    include_default_templates: true,
+    // include_default_templates: true,
     default_values: [
       { name: "series", value: true },
       { name: "day_planner", value: "[[${'INCLUDE_TEMPLATE_DIR'}/day-planner]]" },
@@ -107,6 +112,7 @@ const config = {
   },
   "daily": {
     _extends: "periodic",
+    include_default_templates: true,
     view: {
       // period: 0, // every day
       _tags_add: ["journal"] // It's added to the parent, not overridden

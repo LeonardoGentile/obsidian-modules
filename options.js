@@ -1,9 +1,11 @@
-const StringSet = self.require("_modules/stringSet.js");
-const constants = self.require("_modules/constants.js");
-const periodic = self.require("_modules/periodic.js");
-const { parseTemplateString } = self.require("_modules/template.js");
-const { INCLUDE_TEMPLATE_DIR } = self.require("_modules/constants.js");
-const OPTIONS_CONFIG = self.require("_modules/options_config.js").config;
+const constants = self.require("_modules/config/constants.js");
+const { INCLUDE_TEMPLATE_DIR } = self.require("_modules/config/constants.js");
+const OPTIONS_CONFIG = self.require("_modules/config/options_config.js").config;
+
+const StringSet = self.require("_modules/utils/stringSet.js");
+const periodic = self.require("_modules/utils/periodic.js");
+const { parseTemplateString } = self.require("_modules/templater/template.js");
+
 
 /**
  * Defines properties for Dataview progress bars.
@@ -40,6 +42,7 @@ class BaseOptions {
         this.title_sep = constants.TITLE_SEP;
         this.title_prefix = prefix != undefined ? prefix : moment().format(this.date_fmt);
         this.title_suffix = suffix != undefined ? suffix : this.type;
+        this.title_suffix_stringify = false;
         // Prompt Options
         this.prompt_for_title = true; // If true, prompt for title before file creation
         this.prompt_for_suffix = false; // If true, prompt for title suffix before file creation
@@ -270,9 +273,9 @@ class PeriodicViewOptions extends BaseViewOptions {
         const periods = {
             "daily": () => 0,
             "weekly": () => 7,
-            "monthly": () => moment(title).daysInMonth(),
+            "monthly": () => moment(this.title).daysInMonth(),
             "quarterly": () => 90,
-            "yearly": () => moment(title).isLeapYear() ? 366 : 365,
+            "yearly": () => moment(this.title).isLeapYear() ? 366 : 365,
         }
         this.period = periods.hasOwnProperty(this.type) ? periods[this.type]() : -1
     }

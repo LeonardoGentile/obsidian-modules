@@ -31,7 +31,35 @@ async function promptYesOrNo(tp, promptText, yes) {
     return reply ? reply.toLowerCase() === "y" : false;
 }
 
+/**
+ * Prompts the user for input for any fields of type "input".
+ *
+ * @param {Object} tp - Templater instance
+ * @param {Object} field - Field object
+ * @param {string} defaultValue - Default placeholder value
+ * @return {Object} Object with key/value pairs for input field values
+*/
+async function promptForInputField(tp, field, defaultValue) {
+    const result = await tp.system.prompt(`${field.name}?`, defaultValue || "");
+    return result;
+}
+
+/**
+ * Gets user input values for a YAML field.
+ *
+ * @param {Object} tp - Templater instance
+ * @param {Object} field - The YAML field object
+ * @param {string} defaultValue - Default placeholder value
+ * @return {Object} Object with key/value pairs for field values
+*/
+async function promptForYamlField(tp, field, defaultValue) {
+    const result = await tp.system.prompt(`${field.name}?`, defaultValue || "");
+    return result;
+}
+
 module.exports = {
     promptForDate,
     promptYesOrNo,
+    promptForInputField,
+    promptForYamlField,
 };

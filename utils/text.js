@@ -33,10 +33,12 @@ function capitalizeWord(word) {
  * @param {string} text - Text to transform into a filename.
  * @return {string} - The text suitable for use as a filename.
  */
-function textToFilename(text) {
+function textToFilename(text, stringify) {
+    if(stringify)
+        return sanitizeText(text)
+            .replace(/ /g, "-").toLowerCase()
+            .replace(/[--]+/g, "-");
     return sanitizeText(text)
-        .replace(/ /g, "-").toLowerCase()
-        .replace(/[--]+/g, "-");
 }
 
 /**
