@@ -58,6 +58,7 @@ const config = {
   "interview": { _extends: "meeting" },
   // Projects
   "project": {
+    prompt_for_subfolder: true,
     prompt_for_task: true,
     task_assume_yes: true,
     progress_bar_view: progressView.total,

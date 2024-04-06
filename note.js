@@ -1,17 +1,16 @@
 const constants = self.require("_modules/config/constants.js");
 
-const {multiTagSuggester} = self.require("_modules/templater/suggester.js");
+const { multiTagSuggester } = self.require("_modules/templater/suggester.js");
 const T = self.require("_modules/templater/template.js");
-const {promptYesOrNo} = self.require("_modules/templater/prompt.js");
+const { promptYesOrNo, promptForInputField } = self.require("_modules/templater/prompt.js");
 
 const metadata = self.require("_modules/metadata/metadata.js");
 const { sortFieldsByOrder } = self.require("_modules/metadata/inheritance.js");
-const {toMoment} = self.require("_modules/utils/periodic.js");
+const { toMoment } = self.require("_modules/utils/periodic.js");
 const yt = self.require("_modules/utils/youtube.js");
 
-const {capitalizeWord, capitalizeWords, textToFilename} = self.require("_modules/utils/text.js");
-const {filterFieldsByNameAndType, filterFieldsById} = self.require("_modules/utils/fields.js");
-const {getAllFolderPathsInVault, getOrCreateFolder} = self.require("_modules/utils/obsidian.js");
+const { capitalizeWord, capitalizeWords, textToFilename } = self.require("_modules/utils/text.js");
+const { filterFieldsByNameAndType, filterFieldsById } = self.require("_modules/utils/fields.js");
 const options = self.require("_modules/options.js");
 
 /**
@@ -140,7 +139,7 @@ function asDataviewProp(field, fmt) {
 function asInlineDQL(field, prefix) {
     const dqlPrefix = prefix ?? "=";
     const t = T.template`\`${"prefix"}this.${"name"}\``;
-    return t({prefix: dqlPrefix, name: field.name});
+    return t({ prefix: dqlPrefix, name: field.name });
 }
 
 /**
@@ -155,7 +154,73 @@ function asInlineJS(field, prefix) {
     // If no field values, return null
     const values = field.values ? `${prefix} ${field.values}` : null;
     const t = T.template`\`${"values"}\``;
-    return values ? t({values: values}) : null;
+    return values ? t({ values: values }) : null;
+}
+
+/**
+ * Retrieves all the folder paths from a given vault.
+ * Yoinked from https://github.com/chhoumann/quickadd/blob/master/src/engine/TemplateEngine.ts
+ * @param {object} tp - The templater tp object.
+ * @return {Array<string>} - An array of strings representing the folder paths.
+*/
+function getAllFolderPathsInVault(tp) {
+    return app.vault
+        .getAllLoadedFiles()
+        .filter(f => f instanceof tp.obsidian.TFolder)
+        .filter(f => !f.path.startsWith("_"))
+        .filter(f => !f.path.startsWith("node_modules"))
+        .map(folder => folder.path);
+}
+
+/**
+* Checks if a folder exists in the vault and creates it if not.
+* Yoinked from https://github.com/chhoumann/quickadd/blob/master/src/engine/TemplateEngine.ts
+* @param {string} folder - The path of the folder to create.
+*/
+async function createFolderIfNotExists(folder) {
+    const folderExists = await app.vault.adapter.exists(folder);
+
+    if (!folderExists)
+        // await app.vault.adapter.mkdir(folder)
+        await app.vault.createFolder(folder);
+}
+
+/**
+ * Prompts the user for subfolder input
+ *
+ * @param {Object} tp - Templater instance
+ * @param {string} folder_path - The path of the containing folder
+ * @param {string} title - New name for file
+ * @return {str} string representing the folder path chained with subfolder path (if any)
+ */
+async function promptSubfolder(tp, folder_path, prompt_for_subfolder, title) {
+    let subfolder = "";
+    if (prompt_for_subfolder) {
+        subfolder = await promptForInputField(tp, { name: "subfolder" }, title);
+    }
+    folder_path += subfolder ? `/${subfolder}` : "";
+    return folder_path;
+}
+
+/**
+ * Gets or creates a folder based on the given folders array.
+ * Yoinked from https://github.com/chhoumann/quickadd/blob/master/src/engine/TemplateEngine.ts
+ * @param {object} tp - The templater tp object.
+ * @param {Array<string>} folders - An array of strings representing the folders.
+ * @throws Will throw an error if no folder is selected from suggester.
+ * @return {Promise<string>} A promise that resolves to the path of the selected or created folder.
+ */
+async function getOrCreateFolder(tp, folders, promptForSubfolder, title) {
+    let folderPath;
+    if (folders.length > 1) {
+        folderPath = await tp.system.suggester(folders, folders, false, "Select (or create) folder");
+        if (!folderPath) throw new Error("No folder selected.");
+    } else {
+        folderPath = folders[0];
+    }
+    folderPath = await promptSubfolder(tp, folderPath, promptForSubfolder, title);
+    await createFolderIfNotExists(folderPath);
+    return folderPath;
 }
 
 /**
@@ -198,7 +263,7 @@ async function promptAndRename(tp, title, prefix) {
  * @param {string} suffix - Suggested title suffix for note
  * @param {string} prefix - Suggested title prefix for note
  */
-async function promptMoveAndRename(tp, folders, suffix, prefix) {
+async function promptMoveAndRename(tp, folders, suffix, prefix, prompt_for_subfolder) {
     const origTitle = tp.file.title;
     let folder = tp.file.folder(true);
     const title = await promptAndRename(
@@ -209,7 +274,7 @@ async function promptMoveAndRename(tp, folders, suffix, prefix) {
 
     if (origTitle.startsWith("Untitled")) {
         const folderOptions = folders ?? getAllFolderPathsInVault(tp);
-        const folderPath = await getOrCreateFolder(tp, folderOptions);
+        const folderPath = await getOrCreateFolder(tp, folderOptions, prompt_for_subfolder, title);
         if (folderPath !== folder) {
             await tp.file.move(folderPath + "/" + title);
             folder = folderPath;
@@ -290,10 +355,11 @@ async function newNoteData(tp) {
         await tp.file.rename(title);
         const folder = tp.file.folder(true);
         const folderOptions = folders ?? getAllFolderPathsInVault(tp);
-        const folderPath = await getOrCreateFolder(tp, folderOptions);
+        const folderPath = await getOrCreateFolder(tp, folderOptions, promptOptions.prompt_for_subfolder, title);
         if (folderPath !== folder)
             await tp.file.move(folderPath + "/" + title);
     } else {
+        // TODO: use this function in both cases
         title = await promptMoveAndRename(
             tp,
             folders,
@@ -301,6 +367,7 @@ async function newNoteData(tp) {
                 promptOptions.title_sep + promptOptions.title_suffix :
                 promptOptions.title_suffix,
             promptOptions.title_prefix,
+            promptOptions.prompt_for_subfolder,
         );
     }
 
@@ -318,7 +385,7 @@ async function newNoteData(tp) {
         false;
 
     const taskProgress = tasks ?
-        T.progressBarView({progressView: promptOptions.progress_bar_view, title: title}) : null;
+        T.progressBarView({ progressView: promptOptions.progress_bar_view, title: title }) : null;
     if (taskProgress) {
         const progressBarFields = filterFieldsByNameAndType(fileClass.fields, ["bar"], "input");
         handledValueMap.set("bar", taskProgress);
@@ -374,28 +441,28 @@ async function newNoteData(tp) {
         [...inputResultFields, ...handledResultFields], fileClass.fieldsOrder);
 
     // Prepend note type
-    sortedResultFields.unshift({name: "type", id: null, type: null, values: type});
+    sortedResultFields.unshift({ name: "type", id: null, type: null, values: type });
 
     // Remove nav bar when series is false
     const navField = sortedResultFields.find(obj => obj.name === "nav")?.values;
     const seriesField = sortedResultFields.find(obj => obj.name === "series")?.values;
     const navIndex = sortedResultFields.findIndex(obj => obj.name === "nav");
-    if (navField && seriesField != undefined  && seriesField === false)
+    if (navField && seriesField != undefined && seriesField === false)
         sortedResultFields[navIndex].values = null;
 
     // File includes
     const promptTemplate = sortedResultFields.find(obj => obj.name === "template")?.values;
     if (promptTemplate)
-        sortedResultFields.push({name: "includeFile", id: null, type: null, values: `[[${promptTemplate.path.replace(".md", "")}]]`});
+        sortedResultFields.push({ name: "includeFile", id: null, type: null, values: `[[${promptTemplate.path.replace(".md", "")}]]` });
     const includeFile = promptOptions.getValueForField("includeFile");
     if (includeFile)
-        sortedResultFields.push({name: "includeFile", id: null, type: null, values: `${includeFile}`});
+        sortedResultFields.push({ name: "includeFile", id: null, type: null, values: `${includeFile}` });
     const dayPlanner = promptOptions.getValueForField("day_planner");
     if (tasks && dayPlanner)
-        sortedResultFields.push({name: "dayPlanner", id: null, type: null, values: `${dayPlanner}`});
+        sortedResultFields.push({ name: "dayPlanner", id: null, type: null, values: `${dayPlanner}` });
 
     if (tasks)
-        sortedResultFields.push({name: "actions", id: null, type: null, values: "## 📥 Action Items\n\n - [ ] "});
+        sortedResultFields.push({ name: "actions", id: null, type: null, values: "## 📥 Action Items\n\n - [ ] " });
 
     const fields = splitAndFormatFields(sortedResultFields);
 

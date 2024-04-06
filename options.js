@@ -53,11 +53,13 @@ class BaseOptions {
         this.prompt_for_attachment = false;
         this.prompt_for_project = false;
         this.prompt_for_goal = false;
+        this.prompt_for_subfolder = false; // If true, prompt the name of subfolder
 
         this.progress_bar_view = progressView.page;
         // Array-like fields
         this.files_paths = [];
-        this.include_default_templates = false; // TODO
+        this.include_default_templates = false; /** If true, push an object into default_values with
+                                                 * name `includeFile` and value `[[_templates/include/${type}]]` */
         this.default_values = []; // [{name: field_name, value: default_value}]
         /**
          * Suppress prompts for these fields
@@ -422,10 +424,6 @@ function generateConfig(type) {
     const config = parseConfig(OPTIONS_CONFIG, type);
     config._type = type;
     _handleFields_replace(config);
-
-    // TODO remove special fields
-    // delete config.view._tags_replace;
-    // delete config.view._tags_add;
     return config
 }
 
@@ -445,8 +443,8 @@ function promptOptionFactory(type) {
     // config._extends identifies the topmost type in the inheritance
     // as at this point all children have been recursively merged from bottom to top
     const _type = config._extends || config._type
-    let OptionsClass = BaseOptions
-    let ViewClass = BaseViewOptions;
+    let OptionsClass;
+    let ViewClass;
     switch (_type) {
         case "periodic":
             OptionsClass = PeriodicOptions;
@@ -454,11 +452,12 @@ function promptOptionFactory(type) {
             break;
         case "chat":
             OptionsClass = ChatOptions;
+            ViewClass = {};
             break;
         default:
-            // TODO: remove notice
-            new Notice(`Unsupported parameter for type: ${type}`);
-            // OptionsClass = BaseOptions;
+            new Notice(`No specific option config for type '${type}', using Base Options`);
+            OptionsClass = BaseOptions;
+            ViewClass = BaseViewOptions;
 
     }
     // config.viewClass = ViewClass;
@@ -467,31 +466,8 @@ function promptOptionFactory(type) {
     return promptOptions
 }
 
-/**
- * Factory function that returns a an options instance based on the provided string.
- *
- * @param {string} type - Determines which instance to return
- * @param {string} title - Note title
- * @return {any} The options instance
- */
-function viewOptionFactory(type, title) {
-    const config = generateConfig(type);
-    const viewConfig = config.view || {};
-
-    let ViewClass;
-    switch (config._type) {
-        case "periodic":
-            ViewClass = PeriodicViewOptions
-
-        default:
-            ViewClass = BaseViewOptions
-
-            return new ViewClass(type, title, config);
-    }
-}
 
 module.exports = {
     ChatOptions,
-    promptOptionFactory,
-    viewOptionFactory,
+    promptOptionFactory
 };

@@ -11,6 +11,7 @@ const FRONTMATTER_FIELD_NAMES = [
     "modified",
     "aliases",
     "cssClasses",
+    "project",
     // chat
     "model",
     "temperature",
