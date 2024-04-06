@@ -263,21 +263,34 @@ async function promptAndRename(tp, title, prefix) {
  * @param {string} suffix - Suggested title suffix for note
  * @param {string} prefix - Suggested title prefix for note
  */
-async function promptMoveAndRename(tp, folders, suffix, prefix, prompt_for_subfolder) {
-    const origTitle = tp.file.title;
-    let folder = tp.file.folder(true);
-    const title = await promptAndRename(
-        tp,
-        suffix,
-        prefix,
-    );
+async function promptMoveAndRename(tp, folders, promptOptions) {
+    let title;
+    let origTitle = "";
+    const promptForSubfolder = promptOptions.prompt_for_subfolder;
+    const prefix = promptOptions.title_prefix;
+    const suffix = promptOptions.title_prefix ?
+        promptOptions.title_sep + promptOptions.title_suffix :
+        promptOptions.title_suffix;
 
-    if (origTitle.startsWith("Untitled")) {
+    if (!promptOptions.prompt_for_title) {
+        title = promptOptions.title;
+        await tp.file.rename(title);
+    }
+    else {
+        origTitle = tp.file.title;
+        title = await promptAndRename(
+            tp,
+            suffix,
+            prefix,
+        );
+
+    }
+    let folder = tp.file.folder(true);
+    if (promptOptions.prompt_for_title || origTitle.startsWith("Untitled")) {
         const folderOptions = folders ?? getAllFolderPathsInVault(tp);
-        const folderPath = await getOrCreateFolder(tp, folderOptions, prompt_for_subfolder, title);
+        const folderPath = await getOrCreateFolder(tp, folderOptions, promptForSubfolder, title);
         if (folderPath !== folder) {
             await tp.file.move(folderPath + "/" + title);
-            folder = folderPath;
         }
     }
     return title;
@@ -349,27 +362,7 @@ async function newNoteData(tp) {
         promptOptions.title_suffix = textToFilename(titleContent, promptOptions.title_suffix_stringify);
     }
 
-    let title;
-    if (!promptOptions.prompt_for_title) {
-        title = promptOptions.title;
-        await tp.file.rename(title);
-        const folder = tp.file.folder(true);
-        const folderOptions = folders ?? getAllFolderPathsInVault(tp);
-        const folderPath = await getOrCreateFolder(tp, folderOptions, promptOptions.prompt_for_subfolder, title);
-        if (folderPath !== folder)
-            await tp.file.move(folderPath + "/" + title);
-    } else {
-        // TODO: use this function in both cases
-        title = await promptMoveAndRename(
-            tp,
-            folders,
-            promptOptions.title_prefix ?
-                promptOptions.title_sep + promptOptions.title_suffix :
-                promptOptions.title_suffix,
-            promptOptions.title_prefix,
-            promptOptions.prompt_for_subfolder,
-        );
-    }
+    const title = await promptMoveAndRename(tp, folders, promptOptions);
 
     // Options for view templates, e.g. overview and job-posts
     const viewTemplateOptions = promptOptions.getViewOptions(title)
