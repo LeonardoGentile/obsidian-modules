@@ -28,9 +28,10 @@ function capitalizeWord(word) {
 }
 
 /**
- * Transforms text into a consitent filename.
+ * Transforms text into a consistent filename.
  * All characters are lowercased and words separated by dashes.
  * @param {string} text - Text to transform into a filename.
+ * @param {boolean} stringify - Flag, if true all words of the text will be chained with dashes
  * @return {string} - The text suitable for use as a filename.
  */
 function textToFilename(text, stringify) {

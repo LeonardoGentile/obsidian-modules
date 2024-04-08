@@ -76,7 +76,7 @@ const config = {
     task_assume_yes: true,
     prompt_for_attachment: true,
     progress_bar_view: progressView.total,
-    ignore_fields: ["tags"],
+    ignore_fields: ["tags"], // in this case it won't prompt for tags and use the MDM class tags
     include_default_templates: true,
   },
   // Journal

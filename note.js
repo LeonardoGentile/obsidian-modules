@@ -304,7 +304,7 @@ async function promptMoveAndRename(tp, folders, promptOptions) {
 async function newNoteData(tp) {
     // These fields are handled automatically and formatted directly in template
     const handledValueMap = new Map([]);
-    // Suppress prompts for MM fields are handled automatically using this array
+    // Suppress prompts for MM fields that are handled automatically using this array
     const handledFields = [];
 
     // Get file class data for all file classes.
@@ -404,13 +404,15 @@ async function newNoteData(tp) {
     }
 
     // Alias is used as the first H1 and title in metadata
+    // TODO: make this optional or remove it
     if (alias)
         handledValueMap.set("title", alias);
 
     // Prompt for tags
     let tags = [];
-    const multiFields = filterFieldsByNameAndType(fileClass.fields, ["tags"], "multi");
+    const tagsFields = filterFieldsByNameAndType(fileClass.fields, ["tags"], "multi");
     if (promptOptions.ignore_fields.has("tags")) {
+        // NOTE: MDM classes tags are used to set the instance tag
         tags = fileClass.tagNames;
     } else {
         const selectedTags = await multiTagSuggester(tp, fileClass.tagNames);
@@ -418,7 +420,7 @@ async function newNoteData(tp) {
         tags = Array.from(new Set([...selectedTags, ...fileClassTagNames]));
     }
     handledValueMap.set("tags", tags);
-    handledFields.push(...multiFields);
+    handledFields.push(...tagsFields);
 
     // Get result values for handled fields
     const handledResultFields = metadata.getResultValuesForFields(handledFields, handledValueMap);

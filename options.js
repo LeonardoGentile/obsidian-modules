@@ -40,13 +40,13 @@ class BaseOptions {
         this.type = type;
         this.date_fmt = constants.DATE_FMT;
         this.title_sep = constants.TITLE_SEP;
-        this.title_prefix = prefix != undefined ? prefix : moment().format(this.date_fmt);
-        this.title_suffix = suffix != undefined ? suffix : this.type;
-        this.title_suffix_stringify = false;
+        this.title_prefix = prefix != undefined ? prefix : moment().format(this.date_fmt); // usually a date
+        this.title_suffix = suffix != undefined ? suffix : this.type; // usually the class type
+        this.title_suffix_stringify = false; // if true, incase of auto computed titles -> all words will be chained with dashes
         // Prompt Options
         this.prompt_for_title = true; // If true, prompt for title before file creation
-        this.prompt_for_suffix = false; // If true, prompt for title suffix before file creation
         this.prompt_for_prefix = false; // If true, prompt for title prefix before file creation
+        this.prompt_for_suffix = false; // If true, prompt for title suffix before file creation
         this.prompt_for_alias = true;
         this.prompt_for_task = false;
         this.task_assume_yes = false; // If true, answer "yes" to prompts if asked
