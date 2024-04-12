@@ -21,12 +21,12 @@ async function promptForDate(tp, promptText, dateFmt) {
  *
  * @param {Object} tp - Templater instance
  * @param {string} promptText - The text to display in the prompt
- * @param {boolean} yes - (Optional) True if yes should be the default
+ * @param {boolean} assumeYes - (Optional) True if yes should be the default
  * @return {string} The user input string "y" or "n"
  */
-async function promptYesOrNo(tp, promptText, yes) {
-    const yesNoText = yes ? ("Y/n") : ("y/N");
-    const yesNoValue = yes ? "y" : "n";
+async function promptYesOrNo(tp, promptText, assumeYes) {
+    const yesNoText = assumeYes ? ("Y/n") : ("y/N");
+    const yesNoValue = assumeYes ? "y" : "n";
     const reply = await tp.system.prompt(`${promptText} ${yesNoText}`, yesNoValue);
     return reply ? reply.toLowerCase() === "y" : false;
 }

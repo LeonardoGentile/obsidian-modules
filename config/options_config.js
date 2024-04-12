@@ -1,3 +1,4 @@
+const constants = self.require("_modules/config/constants.js");
 
 /**
  * Defines properties for Dataview progress bars.
@@ -17,6 +18,37 @@ const progressView = {
 //   this array must _extends the values from the parent array
 
 const config = {
+  // All others will inherit from this one
+  "baseConfig": {
+
+    date_fmt: constants.DATE_FMT,
+    title_sep: constants.TITLE_SEP,
+    title_suffix_stringify: false, // if true, incase of auto computed titles -> all words will be chained with dashes
+    // Prompt Options
+    prompt_for_title: true, // If true, prompt for title before file creation
+    prompt_for_prefix: false, // If true, prompt for title prefix before file creation
+    prompt_for_suffix: false, // If true, prompt for title suffix before file creation
+    prompt_for_alias: true,
+    prompt_for_task: false,
+    task_assume_yes: false, // If true, answer "yes" to prompts if asked
+    prompt_for_attachment: false,
+    prompt_for_project: false,
+    prompt_for_goal: false,
+    prompt_for_subfolder: false, // If true, prompt the name of subfolder
+    // Views
+    progress_bar_view: progressView.page,
+    // Array-like fields
+    files_paths: [],
+    include_default_templates: false, /** If true, push an object into default_values with
+                                                 * name `includeFile` and value `[[_templates/include/${type}]]` */
+    default_values: [], // [{name: field_name, value: default_value}]
+    ignore_fields: [
+      "cssClasses", // empty
+      "created", // automatically generated at creation time
+      "modified", // automatically generated at creation time
+      "bar", // only created if tasks are enabled
+    ]
+  },
   // Basic
   "book": {},
   // Resources

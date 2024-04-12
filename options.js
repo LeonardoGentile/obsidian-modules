@@ -59,7 +59,7 @@ class BaseOptions {
         // Array-like fields
         this.files_paths = [];
         this.include_default_templates = false; /** If true, push an object into default_values with
-                                                 * name `includeFile` and value `[[_templates/include/${type}]]` */
+                                                 // * name `includeFile` and value `[[_templates/include/${type}]]` */
         this.default_values = []; // [{name: field_name, value: default_value}]
         /**
          * Suppress prompts for these fields
@@ -68,10 +68,10 @@ class BaseOptions {
          * - Implicit value for values not set explicitly is null
          */
         this._ignore_fields = new StringSet([
-            "cssClasses", // empty
-            "created", // automatically generated at creation time
-            "modified", // automatically generated at creation time
-            "bar", // only created if tasks are enabled
+            // "cssClasses", // empty
+            // "created", // automatically generated at creation time
+            // "modified", // automatically generated at creation time
+            // "bar", // only created if tasks are enabled
         ]);
         // View Class
         this._viewClass = null;
@@ -422,9 +422,11 @@ function parseConfig(allConfig, type) {
  */
 function generateConfig(type) {
     const config = parseConfig(OPTIONS_CONFIG, type);
-    config._type = type;
-    _handleFields_replace(config);
-    return config
+    // Merge with baseOption obj
+    const mergedConfig = _mergeObjects(config, OPTIONS_CONFIG.baseConfig);
+    mergedConfig._type = type;
+    _handleFields_replace(mergedConfig);
+    return mergedConfig
 }
 
 /**
@@ -455,12 +457,11 @@ function promptOptionFactory(type) {
             ViewClass = {};
             break;
         default:
-            new Notice(`No specific option config for type '${type}', using Base Options`);
+            new Notice(`Using generic options config for type '${type}', using Base Options`);
             OptionsClass = BaseOptions;
             ViewClass = BaseViewOptions;
 
     }
-    // config.viewClass = ViewClass;
     const promptOptions = new OptionsClass(type, "", "", config);
     promptOptions.setViewClass(ViewClass);
     return promptOptions

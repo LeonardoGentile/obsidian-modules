@@ -43,47 +43,6 @@ function titleToAlias(tp, title, dateFmt, type) {
 }
 
 /**
- * Splits field objects into separate arrays by field type and formats each field
- * appropriately for its destination in the file.
- *
- * @param {Array<Object>} fields - Array of field objects with name and values properties
- * @return {Object} Object with arrays for each section to format
- */
-function splitAndFormatFields(fields) {
-    return fields.reduce((map, field) => {
-        if (constants.FRONTMATTER_FIELD_NAMES.includes(field.name))
-            map.frontmatter.push(asFrontmatterProp(field));
-        if (constants.INLINE_DV_FIELD_NAMES.includes(field.name))
-            map.inlineDV.push(asDataviewProp(field));
-        if (constants.INLINE_JS_FIELD_NAMES.includes(field.name))
-            map.inlineJS.push(asDataviewProp(field, "js"));
-        if (constants.HEAD_DQL_FIELD_NAMES.includes(field.name)) {
-            if (field.values != undefined)
-                map.inlineDQL.push(asDataviewProp(field, "dql"));
-        }
-        if (constants.LOWER_DQL_FIELD_NAMES.includes(field.name)) {
-            if (field.values != undefined)
-                map.lowerInlineDQL.push(asDataviewProp(field, "dql"));
-        }
-        if (constants.BODY_FIELD_NAMES.includes(field.name))
-            map.body.push(field.values || "");
-        if (constants.EXTRA_FIELD_NAMES.includes(field.name))
-            map[field.name] = field.values;
-        return map;
-    }, {
-        // Head
-        frontmatter: [],
-        inlineDV: [],
-        inlineJS: [],
-        inlineDQL: [],
-        // Body
-        body: [],
-        // Foot
-        lowerInlineDQL: [],
-    });
-}
-
-/**
  * Formats a field object into a frontmatter string for inserting into a file.
  *
  * @param {Object} field - An object containing "name" and "values" keys to format
@@ -155,6 +114,47 @@ function asInlineJS(field, prefix) {
     const values = field.values ? `${prefix} ${field.values}` : null;
     const t = T.template`\`${"values"}\``;
     return values ? t({ values: values }) : null;
+}
+
+/**
+ * Splits field objects into separate arrays by field type and formats each field
+ * appropriately for its destination in the file.
+ *
+ * @param {Array<Object>} fields - Array of field objects with name and values properties
+ * @return {Object} Object with arrays for each section to format
+ */
+function splitAndFormatFields(fields) {
+    return fields.reduce((map, field) => {
+        if (constants.FRONTMATTER_FIELD_NAMES.includes(field.name))
+            map.frontmatter.push(asFrontmatterProp(field));
+        if (constants.INLINE_DV_FIELD_NAMES.includes(field.name))
+            map.inlineDV.push(asDataviewProp(field));
+        if (constants.INLINE_JS_FIELD_NAMES.includes(field.name))
+            map.inlineJS.push(asDataviewProp(field, "js"));
+        if (constants.HEAD_DQL_FIELD_NAMES.includes(field.name)) {
+            if (field.values != undefined)
+                map.inlineDQL.push(asDataviewProp(field, "dql"));
+        }
+        if (constants.LOWER_DQL_FIELD_NAMES.includes(field.name)) {
+            if (field.values != undefined)
+                map.lowerInlineDQL.push(asDataviewProp(field, "dql"));
+        }
+        if (constants.BODY_FIELD_NAMES.includes(field.name))
+            map.body.push(field.values || "");
+        if (constants.EXTRA_FIELD_NAMES.includes(field.name))
+            map[field.name] = field.values;
+        return map;
+    }, {
+        // Head
+        frontmatter: [],
+        inlineDV: [],
+        inlineJS: [],
+        inlineDQL: [],
+        // Body
+        body: [],
+        // Foot
+        lowerInlineDQL: [],
+    });
 }
 
 /**
@@ -296,12 +296,22 @@ async function promptMoveAndRename(tp, folders, promptOptions) {
     return title;
 }
 
+
+async function onPostExecution(tp) {
+    app.commands.executeCommandById("obsidian-linter:lint-file");
+}
+
+
 /**
  * Prompts the user for default values and initializes variables.
  * @param {object} tp Templater API.
  * @return {object} An object of key value pairs.
 */
 async function newNoteData(tp) {
+    tp.hooks.on_all_templates_executed(() => {
+        onPostExecution(tp);
+    });
+
     // These fields are handled automatically and formatted directly in template
     const handledValueMap = new Map([]);
     // Suppress prompts for MM fields that are handled automatically using this array

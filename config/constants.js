@@ -109,7 +109,7 @@ const LOWER_DQL_FIELD_NAMES = [
 ];
 
 /**
- * Fields that don't map to DV or fronmatter metadata
+ * Fields that don't map to DV or frontmatter metadata
  * - Used to insert interstitial content
  * - Accessible from the `fields` object in the template file
  * - Can be used to insert values in multiple locations
