@@ -1,10 +1,11 @@
 const constants = self.require("_modules/config/constants.js");
 const { INCLUDE_TEMPLATE_DIR } = self.require("_modules/config/constants.js");
-const OPTIONS_CONFIG = self.require("_modules/config/options_config.js").config;
+// const OPTIONS_CONFIG = self.require("_modules/config/options_config.js").config;
 
 const StringSet = self.require("_modules/utils/stringSet.js");
 const periodic = self.require("_modules/utils/periodic.js");
-const { parseTemplateString } = self.require("_modules/templater/template.js");
+// const { parseTemplateString } = self.require("_modules/templater/template.js");
+const {parsed_config} = self.require("_modules/config/parse_config.js");
 
 
 /**
@@ -153,7 +154,7 @@ class BaseOptions {
         this._viewClass = classRef
     }
 
-    getViewOptions(title){
+    getViewOptions(title) {
         return new this._viewClass(this.type, title, this._viewConfig)
     }
 }
@@ -259,7 +260,6 @@ class BaseViewOptions {
     }
 }
 
-
 /** Sets default view options for periodic notes. */
 class PeriodicViewOptions extends BaseViewOptions {
     /** Initializes periodic view options with default tags.
@@ -285,157 +285,14 @@ class PeriodicViewOptions extends BaseViewOptions {
 
 
 /**
- * Parses a key to extract the field name and operation.
- * @param {string} key - The key to parse.
- * @returns {Object} An object containing the full name, field name, and operation if the key matches the expected pattern,
- *                   or an object with field name and operation set to null if the key does not match the pattern.
- */
-function _parseFieldName(key) {
-    // Regular expression to match keys with the pattern _field_name_add
-    const regex = /^_([^_]+)_(add|replace|delete)$/;
-
-    // Check if the key matches the expected pattern
-    const match = regex.exec(key);
-    if (match) {
-        // Extract the field name and operation
-        const [, fieldName, operation] = match;
-        return { fullName: key, fieldName, operation };
-    } else {
-        // Key doesn't match the expected pattern, return an object with null values
-        return { fullName: key, fieldName: null, operation: null };
-    }
-}
-
-/**
- * Handles the addition of fields from the current configuration object to the merged configuration object.
- * @param {Object} mergedConfig - The merged configuration object.
- * @param {Object} parentConfig - The parent configuration object.
- * @param {Object} currentConfig - The current configuration object.
- */
-function _handleFields_add(mergedConfig, parentConfig, currentConfig) {
-    Object.keys(currentConfig).forEach((key) => {
-        const { fullName, fieldName, operation } = _parseFieldName(key);
-        if (operation === 'add') {
-            const parentField = parentConfig[fieldName] || [];
-            const currentField = currentConfig[fullName];
-            // Push all items from the current object to the parent array
-            parentField.push(...currentField);
-        }
-    });
-}
-
-/**
- * Handles the replacement of fields within the provided configuration object.
- * @param {Object} configObj - The configuration object to process.
- */
-function _handleFields_replace(configObj) {
-    Object.entries(configObj).forEach(([key, value]) => {
-        if (typeof key === 'string' && typeof value === 'string') {
-            const { fullName, fieldName, operation } = _parseFieldName(key);
-            if (operation === 'replace') {
-                configObj[fieldName].replace(fullName, value);
-            }
-        }
-    });
-    if (configObj.view) {
-        _handleFields_replace(configObj.view);
-    }
-}
-
-/**
- * Injects and compiles values into template literals within the provided configuration object.
- * @param {Object} currentConfig - The current configuration object to process.
- * @param {string} type - The type of configuration being processed.
- */
-function _compileTemplates(currentConfig, type) {
-    // Inject Variables into template literals
-    if (currentConfig.default_values) {
-        currentConfig.default_values.forEach(defaultObjItem => {
-            const { value } = defaultObjItem;
-            if (typeof value === 'string' && value.includes('${')) {
-                // Transform the plain string into a tagged template
-                const compiledTemplate = parseTemplateString(value)({ INCLUDE_TEMPLATE_DIR, type, constants });
-                // Replace the object property with the compiled string
-                defaultObjItem.value = compiledTemplate;
-            }
-        });
-    }
-}
-
-/**
- * Merges two configuration objects, prioritizing the fields from the
- * current configuration over the parent configuration.
- * This can be used for both prompt and view options.
- * @param {Object} parentConfig - The parent configuration object.
- * @param {Object} currentConfig - The current configuration object.
- * @returns {Object} The merged configuration object.
- */
-function _mergeObjects(parentConfig, currentConfig) {
-    if(!parentConfig) parentConfig = {};
-    if(!currentConfig) currentConfig = {};
-    // Merge the configs using the spread/rest operator
-    const mergedConfig = { ...parentConfig, ...currentConfig };
-    _handleFields_add(mergedConfig, parentConfig, currentConfig);
-    return mergedConfig
-}
-
-/**
- * Parses the configuration object for a specific type, handling inheritance
- * and merging of configurations using recursion
- * @param {Object} allConfig - The object containing all configurations for different types.
- * @param {string} type - The type of configuration to parse.
- * @returns {Object} The parsed configuration object for the specified type.
- */
-function parseConfig(allConfig, type) {
-    // Base case: if the object doesn't exist or if the type
-    // doesn't exist in the object, return an empty object
-    let currentConfig;
-    if (!allConfig || !allConfig[type]) {
-        currentConfig = {}
-    }
-    currentConfig = allConfig[type];
-    _compileTemplates(currentConfig, type)
-
-    // If the currentConfig doesn't have an '_extends' field, return it directly
-    if (!currentConfig._extends) {
-        return currentConfig;
-    }
-
-    // Recursively call parseConfig with the parent type
-    const parentConfig = parseConfig(allConfig, currentConfig._extends);
-
-    // Merge the configs using the spread/rest operator
-    const mergedConfig = _mergeObjects(parentConfig, currentConfig);
-    // Update the _extends property to point to the top-most object
-    mergedConfig._extends = parentConfig._extends || currentConfig._extends;
-    // WARNING: mergedConfig won't have the correct views
-    const mergedViews = _mergeObjects(parentConfig.view, currentConfig.view);
-    mergedConfig.view = mergedViews;
-    return mergedConfig;
-}
-
-/**
- * Configurable object factory
- * @param {string} type - string identifying the MDM class name
- * @return {object|null} An object containing the config options
- *                       for the specified (MDM class) type
- */
-function generateConfig(type) {
-    const config = parseConfig(OPTIONS_CONFIG, type);
-    // Merge with baseOption obj
-    const mergedConfig = _mergeObjects(config, OPTIONS_CONFIG.baseConfig);
-    mergedConfig._type = type;
-    _handleFields_replace(mergedConfig);
-    return mergedConfig
-}
-
-/**
  * Factory function that returns a an options instance based on the provided string.
  * @param {string} type - Determines which instance to return
  * @return {any} The options instance
  */
 function promptOptionFactory(type) {
-    const config = generateConfig(type);
+    // const config = generateConfig(type);
+    const config = parsed_config[type];
+
     if (!config) {
         new Notice(`Invalid config type: ${type}`);
     }
@@ -462,7 +319,7 @@ function promptOptionFactory(type) {
             ViewClass = BaseViewOptions;
 
     }
-    const promptOptions = new OptionsClass(type, "", "", config);
+    const promptOptions = new OptionsClass(type, "", "", config.prompt);
     promptOptions.setViewClass(ViewClass);
     return promptOptions
 }
