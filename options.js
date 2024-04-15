@@ -31,13 +31,12 @@ class BaseOptions {
      */
     constructor(type, prefix, suffix, config) {
         // Initialize default properties
-        this._initDefaultOptions(type, prefix, suffix);
+        this._initDefaultOptions(type, prefix, suffix, parsed_config._defaultConfig);
         this._initSetOptions(config);
-        this._initComputedOptions()
     }
 
     // Initialize default properties
-    _initDefaultOptions(type, prefix, suffix) {
+    _initDefaultOptions(type, prefix, suffix, defaultConfig) {
         this.type = type;
         this.date_fmt = constants.DATE_FMT;
         this.title_sep = constants.TITLE_SEP;
@@ -68,14 +67,11 @@ class BaseOptions {
          * - Explicit value setting is through `default_values` or `getValueForField` at runtime
          * - Implicit value for values not set explicitly is null
          */
-        this._ignore_fields = new StringSet([
-            // "cssClasses", // empty
-            // "created", // automatically generated at creation time
-            // "modified", // automatically generated at creation time
-            // "bar", // only created if tasks are enabled
-        ]);
+        this._ignore_fields = new StringSet([]);
+
         // View Class
         this._viewClass = null;
+        this._initSetOptions(defaultConfig.prompt)
     }
 
     /**
@@ -94,17 +90,22 @@ class BaseOptions {
         }
         this._viewConfig = config.view || {}
     }
+
     /**
      * Initializes computed values
      * If include_default_templates is true, it adds a default value for including a template file.
      * The template file path is constructed based on the type of the options object.
      */
-    _initComputedOptions() {
+    async initComputedOptions(tp) {
         if (this.include_default_templates) {
-            this.default_values.push({
-                name: "includeFile",
-                value: `[[${INCLUDE_TEMPLATE_DIR}/${this.type}]]`
-            })
+            const includeTplPath = `${INCLUDE_TEMPLATE_DIR}/${this.type}` + '.md';
+            const fileExist = await tp.file.exists(includeTplPath);
+            if (fileExist) {
+                this.default_values.push({
+                    name: "includeFile",
+                    value: `[[${INCLUDE_TEMPLATE_DIR}/${this.type}]]`
+                })
+            }
         }
     }
 
@@ -289,7 +290,7 @@ class PeriodicViewOptions extends BaseViewOptions {
  * @param {string} type - Determines which instance to return
  * @return {any} The options instance
  */
-function promptOptionFactory(type) {
+async function promptOptionFactory(type, tp) {
     // const config = generateConfig(type);
     const config = parsed_config[type];
 
@@ -320,6 +321,7 @@ function promptOptionFactory(type) {
 
     }
     const promptOptions = new OptionsClass(type, "", "", config.prompt);
+    await promptOptions.initComputedOptions(tp)
     promptOptions.setViewClass(ViewClass);
     return promptOptions
 }

@@ -19,7 +19,7 @@ const progressView = {
 
 const config = {
   // All others will inherit from this one
-  "baseConfig": {
+  "_defaultConfig": {
     prompt: {
       date_fmt: constants.DATE_FMT,
       title_sep: constants.TITLE_SEP,
@@ -39,8 +39,10 @@ const config = {
       progress_bar_view: progressView.page,
       // Array-like fields
       files_paths: [],
-      include_default_templates: false, /** If true, push an object into default_values with
-                                                   * name `includeFile` and value `[[_templates/include/${type}]]` */
+      include_default_templates: true, /** If true, and file exists
+                                         * push an object into default_values with
+                                         * name `includeFile` and value `[[_templates/include/${type}]]`
+                                         * */
       default_values: [], // [{name: field_name, value: default_value}]
       ignore_fields: [
         "cssClasses", // empty
@@ -64,10 +66,7 @@ const config = {
   },
   "reference": {
     _extends: "resource",
-    prompt: {
-      _files_paths_replace: {"library": "lib"},
-      _files_paths_add: ["bogg"]
-    }
+    prompt: {}
   },
   // Clippings / Articles
   "clipping": {

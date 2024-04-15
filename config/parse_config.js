@@ -193,17 +193,13 @@ function parseConfig(allConfig, type) {
 function generateConfig(allConfig) {
     const parsed_config = {}
     for (const [type, configObj] of Object.entries(allConfig)) {
-        if (type != "baseConfig" && typeof configObj === 'object' && configObj !== null) {
+        if (type != "_defaultConfig" && typeof configObj === 'object' && configObj !== null) {
             parsed_config[type] = parseConfig(allConfig, type);
             parsed_config[type]._type = type;
             // _handleFields_replace(config[type]);
         }
     }
-
-    // Merge with baseOption obj
-    // const mergedConfig = _mergeObjects(allConfig.baseConfig, parsed_config);
-
-    // return mergedConfig
+    parsed_config["_defaultConfig"] = deepCopy(allConfig._defaultConfig)
     return parsed_config
 }
 

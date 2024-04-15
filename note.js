@@ -321,7 +321,7 @@ async function newNoteData(tp) {
     const [type, fileClass] = await metadata.promptForFileClass(tp);
 
     // Options in addition to those provided by MM file classes
-    const promptOptions = options.promptOptionFactory(type);
+    const promptOptions = await options.promptOptionFactory(type, tp);
 
     // Should prompt for title prefix?
     const prefix = promptOptions.prompt_for_prefix ?
