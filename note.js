@@ -1,17 +1,14 @@
-const constants = self.require("_modules/config/constants.js");
-
+const {FIELD_NAMES} = self.require("_modules/config/settings.js");
 const { multiTagSuggester } = self.require("_modules/templater/suggester.js");
-const T = self.require("_modules/templater/template.js");
 const { promptYesOrNo, promptForInputField } = self.require("_modules/templater/prompt.js");
-
-const metadata = self.require("_modules/metadata/metadata.js");
-const { sortFieldsByOrder } = self.require("_modules/metadata/inheritance.js");
 const { toMoment } = self.require("_modules/utils/periodic.js");
-const yt = self.require("_modules/utils/youtube.js");
-
 const { capitalizeWord, capitalizeWords, textToFilename } = self.require("_modules/utils/text.js");
 const { filterFieldsByNameAndType, filterFieldsById } = self.require("_modules/utils/fields.js");
+const { sortFieldsByOrder } = self.require("_modules/metadata/inheritance.js");
+const metadata = self.require("_modules/metadata/metadata.js");
 const options = self.require("_modules/options.js");
+const T = self.require("_modules/templater/template.js");
+const yt = self.require("_modules/utils/youtube.js");
 
 /**
  * Converts title text to alias. For periodic notes, dates are formatted so they
@@ -125,35 +122,35 @@ function asInlineJS(field, prefix) {
  */
 function splitAndFormatFields(fields) {
     return fields.reduce((map, field) => {
-        if (constants.FRONTMATTER_FIELD_NAMES.includes(field.name))
+        if (FIELD_NAMES.frontmatter.includes(field.name))
             map.frontmatter.push(asFrontmatterProp(field));
-        if (constants.INLINE_DV_FIELD_NAMES.includes(field.name))
-            map.inlineDV.push(asDataviewProp(field));
-        if (constants.INLINE_JS_FIELD_NAMES.includes(field.name))
-            map.inlineJS.push(asDataviewProp(field, "js"));
-        if (constants.HEAD_DQL_FIELD_NAMES.includes(field.name)) {
+        if (FIELD_NAMES.inline_dv.includes(field.name))
+            map.inline_dv.push(asDataviewProp(field));
+        if (FIELD_NAMES.inline_js.includes(field.name))
+            map.inline_js.push(asDataviewProp(field, "js"));
+        if (FIELD_NAMES.head_dql.includes(field.name)) {
             if (field.values != undefined)
-                map.inlineDQL.push(asDataviewProp(field, "dql"));
+                map.inline_dql.push(asDataviewProp(field, "dql"));
         }
-        if (constants.LOWER_DQL_FIELD_NAMES.includes(field.name)) {
+        if (FIELD_NAMES.lower_dql.includes(field.name)) {
             if (field.values != undefined)
-                map.lowerInlineDQL.push(asDataviewProp(field, "dql"));
+                map.lower_inline_dql.push(asDataviewProp(field, "dql"));
         }
-        if (constants.BODY_FIELD_NAMES.includes(field.name))
+        if (FIELD_NAMES.body.includes(field.name))
             map.body.push(field.values || "");
-        if (constants.EXTRA_FIELD_NAMES.includes(field.name))
+        if (FIELD_NAMES.extra.includes(field.name))
             map[field.name] = field.values;
         return map;
     }, {
         // Head
         frontmatter: [],
-        inlineDV: [],
-        inlineJS: [],
-        inlineDQL: [],
+        inline_dv: [],
+        inline_js: [],
+        inline_dql: [],
         // Body
         body: [],
         // Foot
-        lowerInlineDQL: [],
+        lower_inline_dql: [],
     });
 }
 
@@ -186,39 +183,31 @@ async function createFolderIfNotExists(folder) {
 }
 
 /**
- * Prompts the user for subfolder input
- *
- * @param {Object} tp - Templater instance
- * @param {string} folder_path - The path of the containing folder
- * @param {string} title - New name for file
- * @return {str} string representing the folder path chained with subfolder path (if any)
- */
-async function promptSubfolder(tp, folder_path, prompt_for_subfolder, title) {
-    let subfolder = "";
-    if (prompt_for_subfolder) {
-        subfolder = await promptForInputField(tp, { name: "subfolder" }, title);
-    }
-    folder_path += subfolder ? `/${subfolder}` : "";
-    return folder_path;
-}
-
-/**
  * Gets or creates a folder based on the given folders array.
  * Yoinked from https://github.com/chhoumann/quickadd/blob/master/src/engine/TemplateEngine.ts
  * @param {object} tp - The templater tp object.
  * @param {Array<string>} folders - An array of strings representing the folders.
+ * @param {boolean} prompt_for_subfolder - Wether or not ask the user for subfolder
+ * @param {string} title - New name for file
  * @throws Will throw an error if no folder is selected from suggester.
  * @return {Promise<string>} A promise that resolves to the path of the selected or created folder.
  */
-async function getOrCreateFolder(tp, folders, promptForSubfolder, title) {
+async function getOrCreateFolder(tp, folders, prompt_for_subfolder, title) {
     let folderPath;
+    let subfolder = "";
+
     if (folders.length > 1) {
         folderPath = await tp.system.suggester(folders, folders, false, "Select (or create) folder");
         if (!folderPath) throw new Error("No folder selected.");
     } else {
         folderPath = folders[0];
     }
-    folderPath = await promptSubfolder(tp, folderPath, promptForSubfolder, title);
+
+    // TOFIX: when creating a subfolder some views don't work (e.g. ProjectDV)
+    if (prompt_for_subfolder) {
+        subfolder = await promptForInputField(tp, { name: "subfolder" }, title);
+    }
+    folderPath += subfolder ? `/${subfolder}` : "";
     await createFolderIfNotExists(folderPath);
     return folderPath;
 }

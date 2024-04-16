@@ -1,21 +1,7 @@
-const constants = self.require("_modules/config/constants.js");
-const { INCLUDE_TEMPLATE_DIR } = self.require("_modules/config/constants.js");
-// const OPTIONS_CONFIG = self.require("_modules/config/options_config.js").config;
-
 const StringSet = self.require("_modules/utils/stringSet.js");
 const periodic = self.require("_modules/utils/periodic.js");
-// const { parseTemplateString } = self.require("_modules/templater/template.js");
-const {parsed_config} = self.require("_modules/config/parse_config.js");
-
-
-/**
- * Defines properties for Dataview progress bars.
- * This can be used by Dataview to display custom progress bar views.
- */
-const progressView = {
-    total: "total-progress-bar",
-    page: "page-progress-bar",
-};
+const {PARSED_CONFIG} = self.require("_modules/config/parse_config.js");
+const {PATHS, DATE_FMT, PROGRESS_VIEW} = self.require("_modules/config/settings.js");
 
 /**
  * Defines common options for all note types.
@@ -31,15 +17,15 @@ class BaseOptions {
      */
     constructor(type, prefix, suffix, config) {
         // Initialize default properties
-        this._initDefaultOptions(type, prefix, suffix, parsed_config._defaultConfig);
-        this._initSetOptions(config);
+        this._initDefaultOptions(type, prefix, suffix, PARSED_CONFIG._defaultConfig);
+        this._setUserOptions(config);
     }
 
     // Initialize default properties
     _initDefaultOptions(type, prefix, suffix, defaultConfig) {
         this.type = type;
-        this.date_fmt = constants.DATE_FMT;
-        this.title_sep = constants.TITLE_SEP;
+        this.date_fmt = "";
+        this.title_sep = "";
         this.title_prefix = prefix != undefined ? prefix : moment().format(this.date_fmt); // usually a date
         this.title_suffix = suffix != undefined ? suffix : this.type; // usually the class type
         this.title_suffix_stringify = false; // if true, incase of auto computed titles -> all words will be chained with dashes
@@ -55,7 +41,7 @@ class BaseOptions {
         this.prompt_for_goal = false;
         this.prompt_for_subfolder = false; // If true, prompt the name of subfolder
 
-        this.progress_bar_view = progressView.page;
+        this.progress_bar_view = PROGRESS_VIEW.page;
         // Array-like fields
         this.files_paths = [];
         this.include_default_templates = false; /** If true, push an object into default_values with
@@ -71,14 +57,14 @@ class BaseOptions {
 
         // View Class
         this._viewClass = null;
-        this._initSetOptions(defaultConfig.prompt)
+        this._setUserOptions(defaultConfig.prompt)
     }
 
     /**
      * Set options from the config object (if properties defined in class)
      * @param {object|null} config - object initializer
      */
-    _initSetOptions(config) {
+    _setUserOptions(config) {
         if (config) {
             for (let prop in config) {
                 // using `in` includes properties from the prototype chain
@@ -98,12 +84,12 @@ class BaseOptions {
      */
     async initComputedOptions(tp) {
         if (this.include_default_templates) {
-            const includeTplPath = `${INCLUDE_TEMPLATE_DIR}/${this.type}` + '.md';
+            const includeTplPath = `${PATHS.template_include_dir}/${this.type}` + '.md';
             const fileExist = await tp.file.exists(includeTplPath);
             if (fileExist) {
                 this.default_values.push({
                     name: "includeFile",
-                    value: `[[${INCLUDE_TEMPLATE_DIR}/${this.type}]]`
+                    value: `[[${includeTplPath}]]`
                 })
             }
         }
@@ -171,7 +157,7 @@ class PeriodicOptions extends BaseOptions {
     */
     constructor(type, prefix, suffix, config) {
         prefix = prefix || "";
-        suffix = suffix || periodic.getFormatSettings(type) || moment().format(constants.DATE_FMT);
+        suffix = suffix || periodic.getFormatSettings(type) || moment().format(DATE_FMT);
         super(type, prefix, suffix, config);
         this.date_fmt = periodic.getFormatSettings(type) || this.date_fmt;
     }
@@ -185,7 +171,7 @@ class ChatOptions extends BaseOptions {
      * Sets the default prompt options
      * @param {string} type - Type of note the options instance is associated with
     */
-    constructor(type) {
+    constructor(type, prefix, suffix, config) {
         super(type);
         this.files_paths = []; // bound to path in metadata-menu
         this.ignore_fields = [
@@ -196,16 +182,17 @@ class ChatOptions extends BaseOptions {
             "stream",
             "n",
         ];
+        const options = config.options;
         this.default_values = [
-            { name: "temperature", value: constants.temperature },
-            { name: "top_p", value: constants.top_p },
-            { name: "presence_penalty", value: constants.presence_penalty },
-            { name: "frequency_penalty", value: constants.frequency_penalty },
-            { name: "stream", value: constants.stream },
-            { name: "n", value: constants.n },
+            { name: "temperature", value: options.temperature },
+            { name: "top_p", value: options.top_p },
+            { name: "presence_penalty", value: options.presence_penalty },
+            { name: "frequency_penalty", value: options.frequency_penalty },
+            { name: "stream", value: options.stream },
+            { name: "n", value: options.n },
         ];
-        this.system_prompts = constants.system_prompts;
-        this.prompt_templates = constants.prompt_templates;
+        this.system_prompts = options.system_prompts;
+        this.prompt_templates = options.prompt_templates;
     }
 }
 
@@ -292,13 +279,11 @@ class PeriodicViewOptions extends BaseViewOptions {
  */
 async function promptOptionFactory(type, tp) {
     // const config = generateConfig(type);
-    const config = parsed_config[type];
+    const config = PARSED_CONFIG[type];
 
     if (!config) {
         new Notice(`Invalid config type: ${type}`);
     }
-
-    console.log(JSON.stringify(config, null, 2));
 
     // config._extends identifies the topmost type in the inheritance
     // as at this point all children have been recursively merged from bottom to top
@@ -320,7 +305,7 @@ async function promptOptionFactory(type, tp) {
             ViewClass = BaseViewOptions;
 
     }
-    const promptOptions = new OptionsClass(type, "", "", config.prompt);
+    const promptOptions = new OptionsClass(type, "", "", config.prompt || {});
     await promptOptions.initComputedOptions(tp)
     promptOptions.setViewClass(ViewClass);
     return promptOptions

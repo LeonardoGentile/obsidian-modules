@@ -1,6 +1,4 @@
-const OPTIONS_CONFIG = self.require("_modules/config/options_config.js").config;
-const constants = self.require("_modules/config/constants.js");
-const { INCLUDE_TEMPLATE_DIR } = self.require("_modules/config/constants.js");
+const {OPTIONS} = self.require("_modules/config/settings.js");
 const { parseTemplateString } = self.require("_modules/templater/template.js");
 const { deepCopy } = self.require("_modules/utils/helpers.js");
 
@@ -95,9 +93,8 @@ function _mergeObjects(parentConfig, currentConfig) {
 function _compileTemplate(tplStr, type) {
     // Transform the plain string into a tagged template
     const compiledTemplate = parseTemplateString(tplStr)({
-        INCLUDE_TEMPLATE_DIR,
+        // TODO: inject other vars here
         type,
-        constants
     });
     return compiledTemplate
 }
@@ -196,17 +193,14 @@ function generateConfig(allConfig) {
         if (type != "_defaultConfig" && typeof configObj === 'object' && configObj !== null) {
             parsed_config[type] = parseConfig(allConfig, type);
             parsed_config[type]._type = type;
-            // _handleFields_replace(config[type]);
         }
     }
     parsed_config["_defaultConfig"] = deepCopy(allConfig._defaultConfig)
     return parsed_config
 }
 
-const parsed_config = generateConfig(OPTIONS_CONFIG)
-console.log(JSON.stringify(parsed_config, null, 2));
-
+const PARSED_CONFIG = generateConfig(OPTIONS)
 
 module.exports = {
-    parsed_config
+    PARSED_CONFIG
 }

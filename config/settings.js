@@ -1,28 +1,43 @@
-const constants = self.require("_modules/config/constants.js");
+const PATHS = {
+  // TP, QA, prompt templates, file includes etc.
+  template_root: "_templates",
+  // Root dir for modules such as this
+  modules_root: "_modules",
+  // File classes, lookup and configuration for MM
+  metadata_menu_root: "_mm",
+  // Root dir for DV complex views
+  views_root: "_views"
+}
+
+// For file include templates, used with `tp.file.include`
+PATHS["template_include_dir"] = `${PATHS.template_root}/include`;
+
+const DATE_FMT =  "YYYY-MM-DD";
+const TITLE_SEP =  "-";
 
 /**
  * Defines properties for Dataview progress bars.
  * This can be used by Dataview to display custom progress bar views.
  */
-const progressView = {
+const PROGRESS_VIEW = {
   total: "total-progress-bar",
   page: "page-progress-bar",
 };
 
 // NB: these fields are StringSet
-// config['whatever'].ignore_fields
-// config['whatever'].view.tags
+// config['typeA'].ignore_fields
+// config['typeB'].view.tags
 
 // - Whenever an array is set it replace any value set in the parent
 // - If there is a field like _fieldName_add then it means the values from
 //   this array must _extends the values from the parent array
 
-const config = {
+const OPTIONS = {
   // All others will inherit from this one
   "_defaultConfig": {
     prompt: {
-      date_fmt: constants.DATE_FMT,
-      title_sep: constants.TITLE_SEP,
+      date_fmt: DATE_FMT,
+      title_sep: TITLE_SEP,
       // Prompt Options
       prompt_for_title: true, // If true, prompt for title before file creation
       prompt_for_prefix: false, // If true, prompt for title prefix before file creation
@@ -36,7 +51,7 @@ const config = {
       prompt_for_goal: false,
       prompt_for_subfolder: false, // If true, prompt the name of subfolder
       // Views
-      progress_bar_view: progressView.page,
+      progress_bar_view: PROGRESS_VIEW.page,
       // Array-like fields
       files_paths: [],
       include_default_templates: true, /** If true, and file exists
@@ -119,7 +134,7 @@ const config = {
       prompt_for_subfolder: true,
       prompt_for_task: true,
       task_assume_yes: true,
-      progress_bar_view: progressView.total,
+      progress_bar_view: PROGRESS_VIEW.total,
       ignore_fields: ["tags"],
       include_default_templates: true,
     },
@@ -135,7 +150,7 @@ const config = {
       prompt_for_task: true,
       task_assume_yes: true,
       prompt_for_attachment: true,
-      progress_bar_view: progressView.total,
+      progress_bar_view: PROGRESS_VIEW.total,
       ignore_fields: ["tags"], // in this case it won't prompt for tags and use the MDM class tags
       include_default_templates: true,
     }
@@ -162,11 +177,11 @@ const config = {
       prompt_for_alias: false,
       task_assume_yes: true,
       ignore_fields: ["tags", "series"],
-      // include_default_templates: true,
+      // include_default_templates: true, // TODO:
       default_values: [
         { name: "series", value: true },
-        { name: "day_planner", value: "[[${'INCLUDE_TEMPLATE_DIR'}/day-planner]]" },
-        // { name: "includeFile", value: "[[${INCLUDE_TEMPLATE_DIR}/${type}]]" },
+        { name: "day_planner", value: `[[${PATHS.template_include_dir}/day-planner]]` },
+        // { name: "includeFile", value: `[[${PATHS.template_include_dir}/${type}]]` },
       ]
     },
     view: {
@@ -257,7 +272,7 @@ const config = {
   },
   "vfx-company": {
     _extends: "company",
-    prompt:{},
+    prompt: {},
     view: {
       _tags_replace: {
         "job-post": "vfx-job"
@@ -283,13 +298,162 @@ const config = {
   },
   "vfx-job": {
     _extends: "job-post",
-    prompt:{}
+    prompt: {}
   },
-  // "chat": {
-  //   // _type: "chat"
-  // }
+  "chat": {
+    options: {
+      temperature: 0.1,
+      top_p: 1,
+      presence_penalty: 1,
+      frequency_penalty: 1,
+      stream: true,
+      n: 1,
+      system_prompts: `${PATHS.template_root}/chat/system`,
+      prompt_templates: `${PATHS.template_root}/chat/prompt`,
+    }
+  }
 }
 
+const FIELD_NAMES = {
+  // Obsidian frontmatter yaml fields, e.g. prop: value
+  frontmatter: [
+    "title",
+    "subtitle",
+    "reason",
+    "type",
+    "status",
+    "tags",
+    "series",
+    "created",
+    "modified",
+    "aliases",
+    "cssClasses",
+    "project",
+    // chat
+    "model",
+    "temperature",
+    "top_p",
+    "max_tokens",
+    "presence_penalty",
+    "frequency_penalty",
+    "stream",
+    "stop",
+    "n",
+    "system_commands",
+    "template",
+    // company
+    "location",
+  ],
+  // Inline Dataview fields, e.g. prop:: value
+  inline_dv: [
+    "goal",
+    "timespan",
+    "project",
+    // company
+    "img",
+    "company",
+    "link",
+    // job-post
+    "active",
+    "applied",
+    "jobType",
+    "workFrom",
+    "lastContact",
+    "appSent",
+    // interview
+    "job-post",
+    // yt-video
+    "url",
+    "published",
+    "description",
+    "directLink",
+    "recruiterLink",
+    "author",
+    "rating",
+    "reviewed",
+    "finished",
+    "canonical",
+    "shorlinkUrl",
+    "imageSrc",
+    "thumbnailUrl",
+    "keywords",
+    "genre",
+    "duration",
+    "datePublished",
+    "uploadDate",
+    "authorUrl",
+    "authorName",
+    "ogSitename",
+    "ogUrl",
+    "ogTitle",
+    "ogDescription",
+    "ogImage",
+  ],
+  /**
+  * Dataview inline JS fields
+  * - Defined in a markdown comment `%%` block near the head of the file
+  * - DQL is used for placement in the note body
+  */
+  inline_js: [
+    "nav",
+    "bar",
+    "overview",
+    "projects",
+    "projectDV",
+    "projectTV",
+    "progress",
+    "target",
+    "jobPosts",
+  ],
+  /**
+  * Dataview query language fields
+  * - Placed near the head of the note
+  */
+  head_dql: [
+    "nav",
+    "bar",
+  ],
+  // DQL fields that are sectioned off and placed near the foot of the note body
+  lower_dql: [
+    "overview",
+    "projectDV",
+    "projectTV",
+    "jobPosts",
+  ],
+  /**
+  * Fields that can be used to insert blocks of content in the note body
+  * - Also used to insert interstitial content
+  * - Accessible from `fields.body` in the template file
+  * - Used by few file classes
+  * - Used to insert content once, and only in the note body
+  */
+  body: [
+    "ytdlp",
+    "timestampUrl",
+  ],
+  /**
+  * Fields that don't map to DV or frontmatter metadata
+  * - Used to insert interstitial content
+  * - Accessible from the `fields` object in the template file
+  * - Can be used to insert values in multiple locations
+  */
+  extra: [
+    "alias",
+    "aliases",
+    "title",
+    // Unmapped in MM
+    "actions",
+    "includeFile",
+    "dayPlanner",
+  ]
+}
+
+
 module.exports = {
-  config
+  PATHS,
+  OPTIONS,
+  FIELD_NAMES,
+  DATE_FMT,
+  TITLE_SEP,
+  PROGRESS_VIEW
 }
